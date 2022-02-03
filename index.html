@@ -1,0 +1,172 @@
+<html>
+<!-- https://peachscript.github.io/vue-infinite-loading/zh/guide/start-with-hn.html -->
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>Notes</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/assets/vc-git.svg">
+
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.min.js"></script>
+    <script type="text/javascript"
+        src="//unpkg.com/vue-infinite-loading@2.4.5/dist/vue-infinite-loading.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+
+    <style id="compiled-css" type="text/css">
+        body {
+            padding-top: 28px;
+            background-color: #F6F6EF;
+        }
+
+        .hacker-news-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 4px 20px;
+            line-height: 14px;
+            background-color: #FF6600;
+        }
+
+        .hacker-news-header img {
+            border: 1px solid #fff;
+            vertical-align: middle;
+        }
+
+        .hacker-news-header span {
+            font-family: Verdana, Geneva, sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            vertical-align: middle;
+        }
+
+        .hacker-news-item {
+            margin: 10px 0;
+            padding: 0 10px 0 40px;
+            line-height: 16px;
+            font-size: 14px;
+        }
+
+        .hacker-news-item::before {
+            content: attr(data-num) ".";
+            float: left;
+            margin-left: -40px;
+            width: 32px;
+            color: #888;
+            text-align: right;
+        }
+
+        .hacker-news-item>a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .hacker-news-item>a:hover {
+            color: #000;
+        }
+
+        .hacker-news-item p {
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .hacker-news-item p,
+        .hacker-news-item p a {
+            color: #888;
+        }
+
+        .hacker-news-item p a:not(:hover) {
+            text-decoration: none;
+        }
+
+        .hacker-news-item span {
+            word-break: break-all;
+            white-space: pre-line
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="app">
+        <header class="hacker-news-header">
+            <a href="/">
+                <img src="/assets/vc-git.svg" height="16px" width="16px">
+            </a>
+            <span>Notes</span>
+        </header>
+
+        <div class="hacker-news-item" v-for="(item, $index) in list" :key="$index"
+            :data-num="$index + 1 + (start-1)*20">
+            <a target="_blank" :href="item.url" v-text="item.title"></a>
+            <p>
+                <span v-text="item.description"></span>
+            </p>
+            <p>
+                <span v-text="item.author"></span>
+                |
+                <span v-text="item.updated"></span>
+            </p>
+        </div>
+
+        <infinite-loading @infinite="infiniteHandler"></infinite-loading>
+    </div>
+
+    <script type="text/javascript">//<![CDATA[
+
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    start: this.getPage(),
+                    page: this.getPage(),
+                    list: [],
+                };
+            },
+            methods: {
+                getPage() {
+                    return new URL(location.href).searchParams.get('page') ? parseInt(new URL(location.href).searchParams.get('page')) : 1;
+                },
+                infiniteHandler($state) {
+                    axios.get(`/api/feeds/${this.page}.json`)
+                        .catch(function (error) {
+                            if (error.response.status === 404) {
+                                $state.complete();
+                            }
+                        })
+                        .then(({ data }) => {
+                            if (data.pages.length) {
+                                this.page += 1;
+                                for (let i in data.pages) {
+                                    if (data.pages[i].description) {
+                                        data.pages[i].description = decodeURIComponent(data.pages[i].description)
+                                            .replace(/\+/g, " ")// https://shopify.github.io/liquid/filters/url_encode/
+                                            ;
+                                    }
+                                    this.list.push(data.pages[i]);
+                                }
+
+                                $state.loaded();
+                                if (!data.next) {
+                                    $state.complete();
+                                }
+                            } else {
+                                $state.complete();
+                            }
+                        });
+                },
+            },
+        });
+
+
+
+    //]]></script>
+
+
+
+</body>
+
+</html>

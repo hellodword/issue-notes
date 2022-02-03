@@ -1,0 +1,29 @@
+---
+layout: null
+permalink: /api/feeds
+pagination:
+  permalink: ''
+  enabled: true
+  extension: .json
+  indexpage: ':num'
+---
+
+{
+  "pages": [{% for post in paginator.posts %}
+    {% if forloop.first != true %},{% endif %}
+    {
+{% if post.date %}      "updated": "{{ post.date | date: "%Y-%m-%d %H:%M:%S" }}",{% endif %}
+{% if post.description %}      "description": "{{ post.description | url_encode }}",{% endif %}
+      "content": "{{ post.content | url_encode }}",
+      "author": "{% if post.author %}{{ post.author }}{% else %}Notes{% endif %}",
+      "title": "{{ post.title }}",
+      "url": "{{ post.url }}"
+    }{% endfor %}
+  ]
+  {% if paginator.next_page %}
+  ,"next": "{{ paginator.next_page_path }}"
+  {% endif %}
+  {% if paginator.previous_page %}
+  ,"prev": "{{ paginator.previous_page_path }}"
+  {% endif %}
+}
