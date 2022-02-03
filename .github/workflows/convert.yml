@@ -1,0 +1,56 @@
+name: convert
+
+on:
+  issue_comment:
+    types: [created, edited, deleted]
+  issues:
+    types: [opened, edited, deleted, transferred, pinned, unpinned, closed, reopened, assigned, unassigned, labeled, unlabeled, locked, unlocked, milestoned, demilestoned]
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: debug
+        run: |
+          echo "github.event_name: ${{ github.event_name }}"
+          echo "github.event.action: ${{ github.event.action }}"
+          echo "github.event.action: ${{ github.event.action }}"
+          echo "github.actor: ${{ github.actor }}"
+          echo "github.repository_owner: ${{ github.repository_owner }}"
+
+      - name: check
+        if: ${{ github.actor != github.repository_owner }}
+        run: |
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: 'main'
+          path: 'main'
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: 'gh-pages'
+          path: 'gh-pages'
+      - name: convert.js
+        uses: actions/github-script@v5
+        with:
+          script: |
+            console.log(process.cwd())
+            const script = require('./main/.github/workflows/convert.js');
+            await script({github, context, core})
+
+      - name: commit
+        run: |
+          cd gh-pages
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add _posts/*.md
+          git commit -m "auto commit" || exit 0
+          git push -u origin gh-pages

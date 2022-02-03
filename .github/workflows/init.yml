@@ -1,0 +1,49 @@
+name: init
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: 'main'
+          path: 'main'
+      - name: init gh-pages branch
+        run: |
+          if [ -z "$(git ls-remote --heads https://github.com/${GITHUB_REPOSITORY} gh-pages)" ]; then
+            cd main
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+            git rm _posts/*
+            git commit -m ':tada:'
+            git branch -M gh-pages
+            git push -u origin gh-pages          
+          fi
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: 'gh-pages '
+          path: 'gh-pages '
+      - name: sync
+        run: |
+          cd main
+          export GIT_COMMIT_MESSAGE=$(git show -s --format=%s HEAD)
+          echo "${GIT_COMMIT_MESSAGE}"
+          rm -rf _posts
+          rm -rf .git
+          cd ..
+          cp -r main/* gh-pages/
+          cd gh-pages
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git commit -m "${GIT_COMMIT_MESSAGE}" || exit 0
+          git push -u origin gh-pages
