@@ -135,7 +135,13 @@ layout: null
                 },
                 infiniteHandler($state) {
                     let base = '{{ "" | relative_url }}';
-                    axios.get(this.page === 1 ? `${base}/index.html` : `${base}/feeds/${this.page}/index.html`)
+                    axios.get(`${this.page === 1 ? `${base}/index.html` : `${base}/feeds/${this.page}/index.html`}?_r=${Math.random()}`, {
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache',
+                            'Expires': '0',
+                        },
+                    })
                         .catch(function (error) {
                             if (error.response.status === 404) {
                                 $state.complete();

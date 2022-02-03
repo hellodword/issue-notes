@@ -42,7 +42,6 @@ jobs:
         uses: actions/github-script@v5
         with:
           script: |
-            console.log(process.cwd())
             const script = require('./main/.github/workflows/convert.js');
             await script({github, context, core})
 

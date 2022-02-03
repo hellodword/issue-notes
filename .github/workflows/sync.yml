@@ -1,9 +1,15 @@
-name: init
+name: sync
 
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
+    paths-ignore:
+      - '.github/**'
+      - README.md
+      - LICENSE
+      - '.gitignore'
+      - '_posts/**'
 
 jobs:
   build:

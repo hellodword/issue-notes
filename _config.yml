@@ -106,3 +106,4 @@ webrick:
   headers:
     "Access-Control-Allow-Origin": "*"
     "Server": "*"
+    Cache-control: no-cache
