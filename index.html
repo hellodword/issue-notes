@@ -2,7 +2,7 @@
 layout: null
 ---
 
-<script>window.location.href="/home"</script><!--
+<script>window.location.href='{{ "/home.html" | relative_url }}'</script><!--
 
 
 {
@@ -14,13 +14,13 @@ layout: null
         "content": "{{ post.content | url_encode }}",
         "author": "{% if post.author %}{{ post.author }}{% else %}Notes{% endif %}",
         "title": "{{ post.title | url_encode }}",
-        "url": "{{ post.url }}"
+        "url": "{{ post.url | relative_url }}"
       }{% endfor %}
     ]
     {% if paginator.next_page %}
-    ,"next": "{{ paginator.next_page_path }}"
+    ,"next": "{{ paginator.next_page_path | relative_url }}"
     {% endif %}
     {% if paginator.previous_page %}
-    ,"prev": "{{ paginator.previous_page_path }}"
+    ,"prev": "{{ paginator.previous_page_path | relative_url }}"
     {% endif %}
   }

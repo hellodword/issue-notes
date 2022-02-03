@@ -51,6 +51,6 @@ jobs:
           cd gh-pages
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add _posts/*.md
+          git add _posts
           git commit -m "auto commit" || exit 0
           git push -u origin gh-pages

@@ -12,7 +12,7 @@ layout: null
     <meta name="robots" content="noindex, nofollow">
     <meta name="googlebot" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="/assets/vc-git.svg">
+    <link rel="icon" href='{{ "/assets/vc-git.svg" | relative_url }}'>
 
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.min.js"></script>
     <script type="text/javascript" src="//unpkg.com/vue-infinite-loading@2.4.5/dist/vue-infinite-loading.js"></script>
@@ -96,8 +96,8 @@ layout: null
 <body>
     <div id="app">
         <header class="hacker-news-header">
-            <a href="/">
-                <img src="/assets/vc-git.svg" height="16px" width="16px">
+            <a href='{{ "/" | relative_url }}'>
+                <img src='{{ "/assets/vc-git.svg" | relative_url }}' height="16px" width="16px">
             </a>
             <span>Notes</span>
         </header>
@@ -134,7 +134,8 @@ layout: null
                     return new URL(location.href).searchParams.get('page') ? parseInt(new URL(location.href).searchParams.get('page')) : 1;
                 },
                 infiniteHandler($state) {
-                    axios.get(this.page === 1 ? `/index.html` : `/feeds/${this.page}/index.html`)
+                    let base = '{{ "" | relative_url }}';
+                    axios.get(this.page === 1 ? `${base}/index.html` : `${base}/feeds/${this.page}/index.html`)
                         .catch(function (error) {
                             if (error.response.status === 404) {
                                 $state.complete();
@@ -142,7 +143,7 @@ layout: null
                         })
                         .then(({ data }) => {
                             // Please note that jekyll-paginate-v2 plugin is NOT supported by GitHub pages
-                            data = data.replace(/<script>window.location.href="\/home"<\/script><!--/, "");
+                            data = data.replace(/<script>[^<\n\r]+<\/script><!--/, "");
                             data = JSON.parse(data);
                             if (data.pages.length) {
                                 this.page += 1;

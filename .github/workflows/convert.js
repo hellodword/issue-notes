@@ -105,7 +105,6 @@ module.exports = async ({
     context,
     core
 }) => {
-    console.log(context)
     console.log('context.eventName', context.eventName)
     console.log('context.payload.action', context.payload.action)
 
@@ -151,7 +150,7 @@ module.exports = async ({
                     break;
                 }
                 case 'reopened': {
-                    console.log('Unsupported yet');
+                    createPost(basedir, filenamePrefix, filenameId, date, title, body, true);
                     break;
                 }
                 case 'assigned': {
