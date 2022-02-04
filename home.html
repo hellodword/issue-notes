@@ -12,7 +12,8 @@ layout: null
     <meta name="robots" content="noindex, nofollow">
     <meta name="googlebot" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href='{{ "/assets/vc-git.svg" | relative_url }}'>
+
+    {%- include custom-head.html -%}
 
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.min.js"></script>
     <script type="text/javascript" src="//unpkg.com/vue-infinite-loading@2.4.5/dist/vue-infinite-loading.js"></script>
@@ -89,6 +90,12 @@ layout: null
             word-break: break-all;
             white-space: pre-line
         }
+
+        .hacker-news-item i {
+            word-break: break-all;
+            white-space: pre-line;
+            color: rgb(14, 92, 33);
+        }
     </style>
 
 </head>
@@ -97,7 +104,7 @@ layout: null
     <div id="app">
         <header class="hacker-news-header">
             <a href='{{ "/" | relative_url }}'>
-                <img src='{{ "/assets/vc-git.svg" | relative_url }}' height="16px" width="16px">
+                <img src='{{ "/assets/favicon/safari-pinned-tab.svg" | relative_url }}' height="16px" width="16px">
             </a>
             <span>Notes</span>
         </header>
@@ -108,10 +115,13 @@ layout: null
             <p>
                 <span v-text="item.description"></span>
             </p>
+            <!-- <p>
+            <div v-html="item.content"></div>
+            </p> -->
             <p>
-                <span v-text="item.author"></span>
+                <i v-text="item.author"></i>
                 |
-                <span v-text="item.updated"></span>
+                <i v-text="item.updated"></i>
             </p>
         </div>
 
@@ -168,6 +178,15 @@ layout: null
                                             ;
                                     }
 
+                                    if (data.pages[i].description && data.pages[i].description !== '') {
+                                        data.pages[i].content = '';
+                                    } else if (data.pages[i].content) {
+                                        data.pages[i].content = decodeURIComponent(data.pages[i].content)
+                                            .replace(/\+/g, " ")
+                                            .replace(/\r/g, " ")
+                                            ;
+                                        // data.pages[i].content = marked.parse(data.pages[i].content);
+                                    }
 
                                     this.list.push(data.pages[i]);
                                 }

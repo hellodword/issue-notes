@@ -3,7 +3,7 @@ layout: post
 published: true
 title:  Hello to jekyll 中文测试
 date:   2022-02-02 21:19:03 +0800
-categories: jekyll update
+author: jekyll
 description: |
   Jekyll requires blog post files to be named according to the following format 中文 test
   1234
