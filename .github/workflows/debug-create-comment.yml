@@ -1,0 +1,26 @@
+name: debug create comment
+
+on: 
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "issue_number"
+        required: true
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: convert.js
+        uses: actions/github-script@v5
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.inputs.issue_number }},
+              body: "test"
+            });

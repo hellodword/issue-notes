@@ -1,0 +1,26 @@
+name: debug edit comment
+
+on: 
+  workflow_dispatch:
+    inputs:
+      comment_id:
+        description: "comment_id"
+        required: true
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: convert.js
+        uses: actions/github-script@v5
+        with:
+          script: |
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ github.event.inputs.comment_id }},
+              body: "test"+Math.random()
+            });
