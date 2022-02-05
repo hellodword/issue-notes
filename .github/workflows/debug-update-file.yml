@@ -1,0 +1,27 @@
+name: debug update file
+
+on: 
+  workflow_dispatch:
+    inputs:
+      path:
+        description: "path"
+        required: false
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: convert.js
+        uses: actions/github-script@v5
+        with:
+          script: |
+            await github.rest.repos.createOrUpdateFileContents({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              branch: 'assets',
+              path: `${{ github.event.inputs.path }}favicon-16x16.png`,
+              message: `add favicon-16x16.png`,
+              content: 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABqlBMVEX////////////////////////////////////////////////////////////////////////////////////////////8/Py/wca4vcP8/P35+fnOztRXWmo/S1vHx8z4+Pnz8/Wfn6xlZXlhYnlGSVxJSViRkZrz8/Svr7pfX3RhYXdLSltCQlKnp67v7/Fubn5QUGNTU2ZXV2o7P1AnMkQiLkBPWGfw8PLg4OJmZnl5eZVqaoJMTF4kMUQ6Q1hLUGU5R1nd4OPf3+Fvb4hYWG1RUmQxOEsmM0c+Rls5Rljc3+Lj4+ZgYHFRUWRbW29QUmY4PE05PE0mMEI+R1fj5Obu7vB3d4leXnNmZnxpaoNNT2NGRlZBQVFiYm/u7u/y8vWJiZx7e5aCgZ9iYnhUVGZAQFBvb327u8GQkKKGhqR1dYuBgZ57e5dcXHFZWWxVVWVeXnJ+foy8vMLo6OphYW5DQ1WCgpjd3eTCwtCTk616eo2xsbrT09htbX0+Pk9hYW/+/v7AwMZXV2aenqf9/f39/f7v7/Ls7O+enqZYWGbBwcbd3eD09PXxICFSAAAAFnRSTlMFYNj92mUGYe3vZ9fd/P7Z3/Fs4WsIeu2NfwAAAAFiS0dEAIgFHUgAAAAHdElNRQfmAgQCHRuP5ueWAAAA2ElEQVQY02NgYGRiFoMCZhZWNgZ2DhBTXEJSCkRzcjFwg2hpGVk5eQUQi4eBF0gqKimrqKqpawCZfAwgYU0tLW0dXV09EBskoG9gaGRsYmpmbgEVsLSytrG1s3dwdIIKOFu5uLq5e3h6eUMFfHz9/AMCg4JDQqECYeERkVHRMbFx8VCBhMSIpOSU1LT0MLCAeEZmVnZObl5+QWFRsbgYA3NJaVl5RWVVdU1tXX1DCR8Df2NTc0trW3tHa2tnV3ejAAMrZ2tPL8SzvT2tgkIMbFwCYnAgLCIKALr3NL9dVo1hAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDIyLTAyLTA0VDAyOjI5OjI3KzAwOjAwwe77twAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyMi0wMi0wNFQwMjoyOToyNyswMDowMLCzQwsAAABXelRYdFJhdyBwcm9maWxlIHR5cGUgaXB0YwAAeJzj8gwIcVYoKMpPy8xJ5VIAAyMLLmMLEyMTS5MUAxMgRIA0w2QDI7NUIMvY1MjEzMQcxAfLgEigSi4A6hcRdPJCNZUAAAAASUVORK5CYII=',
+            })

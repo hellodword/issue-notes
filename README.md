@@ -51,18 +51,18 @@ Github Ussues 支持：
       ```md
       >>> author "hello dword"
       ```
-    - [ ] description/desc
+    - [ ] desc
       ```
-      Usage:  >>> description [line1]
-              >>> description [line2]
-              >>> description [line3]
+      Usage:  >>> desc [line1]
+                       [line2]
+                       [line3]
       ```
       ```md
-      >>> description "hello dword"
-      >>> desc line 2
-      >>> description line 3
+      >>> desc "hello dword"
+               line2
+               "line 3"
       ```
-    - [ ] image/img
+    - [ ] img
       ```
       Usage:  >>> img [LINK]
       ```
@@ -91,17 +91,17 @@ Github Ussues 支持：
 
       [Learn Go with tests.pdf](https://github.com/hellodword/issue-notes/files/1234567/default.pdf)
       ```
-    - [ ] delete/del
+    - [ ] del
       ```
-      Usage:  >>> delete [LINK]
+      Usage:  >>> del [LINK]
       ```
 
       ```md
-      >>> delete https://hellodword.github.io/issue-notes/2022/02/03/1-1029028094.html
+      >>> del https://hellodword.github.io/issue-notes/2022/02/03/1-1029028094.html
 
       or
 
-      >>> delete https://github.com/hellodword/issue-notes/issues/1#issuecomment-1029028094
+      >>> del https://github.com/hellodword/issue-notes/issues/1#issuecomment-1029028094
       ```
     - [ ] code
       ```

@@ -10,6 +10,7 @@ on:
       - LICENSE
       - '.gitignore'
       - '_posts/**'
+      - 'convert-module/**'
 
 jobs:
   build:

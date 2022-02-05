@@ -14,7 +14,7 @@ layout: null
         "content": "{{ post.content | url_encode }}",
         "author": "{% if post.author %}{{ post.author }}{% else %}Notes{% endif %}",
         "title": "{{ post.title | url_encode }}",
-        "url": "{{ post.url | relative_url }}"
+        "url": "{% if post.jumplink %}{{ post.jumplink }}{% else %}{{ post.url | relative_url }}{% endif %}"
       }{% endfor %}
     ]
     {% if paginator.next_page %}
