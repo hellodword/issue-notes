@@ -44,87 +44,51 @@ Github Ussues 支持：
 
   - [ ] inline commands
     > 设计了一些 inline commands，选用了 markdown 里的三层 quote 作为标识，而不是容易影响 markdown 格式的 jekyll 的 YAML front matter。刚好 github-actions 这个 app 对 issues 进行的操作是不会触发 Github Actions 的，可以用于编译修改包含 inline commands 的 issue/comment。
-    - [ ] author
+    - [x] `author` 对应 jekyll YAML front matter 的 author
       ```
-      Usage:  >>> author [AUTHOR]
+      >>> author [AUTHOR]
       ```
-      ```md
-      >>> author "hello dword"
+    - [x] `desc` 对应 jekyll YAML front matter 的 description
       ```
-    - [ ] desc
-      ```
-      Usage:  >>> desc [line1]
-                       [line2]
-                       [line3]
-      ```
-      ```md
-      >>> desc "hello dword"
-               line2
-               "line 3"
-      ```
-    - [ ] img
-      ```
-      Usage:  >>> img [LINK]
-      ```
-      ```md
-      >>> img https://test.com/test.png
+      >>> desc [line1]
+               [line2]
+               [line3]
 
-      ![https://test.com/test.png](https://user-images.githubusercontent.com/1234567/12345678.png)
+          >>> desc `hello dword` `hi`
+                  line2
+                  "line 3"
       ```
-    - [ ] file
+    - [x] `img` 远程请求并插入图片
       ```
-      Usage:  >>> file [OPTIONS] [LINK]
-
-        Only support .gif,.jpeg,.jpg,.mov,.mp4,.png,.svg,.csv,.docx,.fodg,.fodp,.fods,.fodt,.gz,.log,.md,.odf,.odg,.odp,.ods,.odt,.pdf,.pptx,.txt,.xls,.xlsx,.zip.
-        Other files will be added to a zip archive.
-
-        Options:
-              --split             Split large file to zip files (default false)
-              -o, --output <name> File name
+      >>> img [LINK]
       ```
-
-      ```md
-      >>> file -o "Learn Go with tests.pdf" https://github.com/quii/learn-go-with-tests/releases/download/12.5.0/learn-go-with-tests.pdf
-
-
-      > [Learn Go with tests.pdf](https://github.com/quii/learn-go-with-tests/releases/download/12.5.0/learn-go-with-tests.pdf)
-
-      [Learn Go with tests.pdf](https://github.com/hellodword/issue-notes/files/1234567/default.pdf)
+    - [x] `jump` 首页不跳转到 jekyll post 链接
       ```
-    - [ ] del
+      >>> jump [LINK]
       ```
-      Usage:  >>> del [LINK]
+    - [ ] `del` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了
       ```
+      >>> del [LINK]
 
-      ```md
-      >>> del https://hellodword.github.io/issue-notes/2022/02/03/1-1029028094.html
+          >>> del https://hellodword.github.io/issue-notes/2022/02/03/1-1029028094.html
 
-      or
+          >>> del https://github.com/hellodword/issue-notes/issues/1#issuecomment-1029028094
+      ```
+    - [ ] `code` 远程请求并嵌入代码
+      ```
+      >>> code [OPTIONS] [LINK]
 
-      >>> del https://github.com/hellodword/issue-notes/issues/1#issuecomment-1029028094
-      ```
-    - [ ] code
-      ```
-      Usage:  >>> code [OPTIONS] [LINK]
+          Options:
+                --lang   Identifier to enable syntax highlighting
+                --file   <name> File name
 
-        Options:
-              --lang  Identifier to enable syntax highlighting
+          >>> code --lang js --file test.js https://test.com/test.js
       ```
+    - [ ] `archive` 可以对文章进行 archive
+      ```
+      >>> archive [LINK]
 
-      ~~~md
-      >>> code --lang js https://test.com/test.js
-
-      > [raw](https://test.com/test.js)
-      ```js
-      ...
-      ```
-      ~~~
-    - [ ] archive
-      ```
-      Usage:  >>> archive [LINK]
-      ```
-      ```md
-      >>> archive https://tailscale.com/blog/how-nat-traversal-works/
+          >>> archive https://tailscale.com/blog/how-nat-traversal-works/
       ```
   - [x] event `issue_comment`:
     - [x] created

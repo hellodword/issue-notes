@@ -2444,7 +2444,7 @@ exports.colors = [6, 2, 3, 4, 5, 1];
 try {
 	// Optional dependency (as in, doesn't need to be installed, NOT like optionalDependencies in package.json)
 	// eslint-disable-next-line import/no-extraneous-dependencies
-	const supportsColor = __nccwpck_require__(132);
+	const supportsColor = __nccwpck_require__(9318);
 
 	if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
 		exports.colors = [
@@ -3521,6 +3521,22 @@ module.exports = function getCallerFile(position) {
 
 /***/ }),
 
+/***/ 1621:
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = (flag, argv = process.argv) => {
+	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
+	const position = argv.indexOf(prefix + flag);
+	const terminatorPosition = argv.indexOf('--');
+	return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
+};
+
+
+/***/ }),
+
 /***/ 5625:
 /***/ ((module) => {
 
@@ -4428,6 +4444,149 @@ const stripAnsi = string => typeof string === 'string' ? string.replace(ansiRege
 
 module.exports = stripAnsi;
 module.exports["default"] = stripAnsi;
+
+
+/***/ }),
+
+/***/ 9318:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const os = __nccwpck_require__(2037);
+const tty = __nccwpck_require__(6224);
+const hasFlag = __nccwpck_require__(1621);
+
+const {env} = process;
+
+let forceColor;
+if (hasFlag('no-color') ||
+	hasFlag('no-colors') ||
+	hasFlag('color=false') ||
+	hasFlag('color=never')) {
+	forceColor = 0;
+} else if (hasFlag('color') ||
+	hasFlag('colors') ||
+	hasFlag('color=true') ||
+	hasFlag('color=always')) {
+	forceColor = 1;
+}
+
+if ('FORCE_COLOR' in env) {
+	if (env.FORCE_COLOR === 'true') {
+		forceColor = 1;
+	} else if (env.FORCE_COLOR === 'false') {
+		forceColor = 0;
+	} else {
+		forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
+	}
+}
+
+function translateLevel(level) {
+	if (level === 0) {
+		return false;
+	}
+
+	return {
+		level,
+		hasBasic: true,
+		has256: level >= 2,
+		has16m: level >= 3
+	};
+}
+
+function supportsColor(haveStream, streamIsTTY) {
+	if (forceColor === 0) {
+		return 0;
+	}
+
+	if (hasFlag('color=16m') ||
+		hasFlag('color=full') ||
+		hasFlag('color=truecolor')) {
+		return 3;
+	}
+
+	if (hasFlag('color=256')) {
+		return 2;
+	}
+
+	if (haveStream && !streamIsTTY && forceColor === undefined) {
+		return 0;
+	}
+
+	const min = forceColor || 0;
+
+	if (env.TERM === 'dumb') {
+		return min;
+	}
+
+	if (process.platform === 'win32') {
+		// Windows 10 build 10586 is the first Windows release that supports 256 colors.
+		// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
+		const osRelease = os.release().split('.');
+		if (
+			Number(osRelease[0]) >= 10 &&
+			Number(osRelease[2]) >= 10586
+		) {
+			return Number(osRelease[2]) >= 14931 ? 3 : 2;
+		}
+
+		return 1;
+	}
+
+	if ('CI' in env) {
+		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
+			return 1;
+		}
+
+		return min;
+	}
+
+	if ('TEAMCITY_VERSION' in env) {
+		return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
+	}
+
+	if (env.COLORTERM === 'truecolor') {
+		return 3;
+	}
+
+	if ('TERM_PROGRAM' in env) {
+		const version = parseInt((env.TERM_PROGRAM_VERSION || '').split('.')[0], 10);
+
+		switch (env.TERM_PROGRAM) {
+			case 'iTerm.app':
+				return version >= 3 ? 3 : 2;
+			case 'Apple_Terminal':
+				return 2;
+			// No default
+		}
+	}
+
+	if (/-256(color)?$/i.test(env.TERM)) {
+		return 2;
+	}
+
+	if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
+		return 1;
+	}
+
+	if ('COLORTERM' in env) {
+		return 1;
+	}
+
+	return min;
+}
+
+function getSupportLevel(stream) {
+	const level = supportsColor(stream, stream && stream.isTTY);
+	return translateLevel(level);
+}
+
+module.exports = {
+	supportsColor: getSupportLevel,
+	stdout: translateLevel(supportsColor(true, tty.isatty(1))),
+	stderr: translateLevel(supportsColor(true, tty.isatty(2)))
+};
 
 
 /***/ }),
@@ -8958,14 +9117,6 @@ function rebase (base, dir) {
 
 /***/ }),
 
-/***/ 132:
-/***/ ((module) => {
-
-module.exports = eval("require")("supports-color");
-
-
-/***/ }),
-
 /***/ 9491:
 /***/ ((module) => {
 
@@ -8995,6 +9146,14 @@ module.exports = require("http");
 
 "use strict";
 module.exports = require("https");
+
+/***/ }),
+
+/***/ 2037:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("os");
 
 /***/ }),
 
@@ -9155,18 +9314,20 @@ __nccwpck_require__.d(constructs_namespaceObject, {
   "text": () => (constructs_text)
 });
 
-;// CONCATENATED MODULE: ./helper.js
-function pad2(n) {
-    return (n < 10 ? '0' : '') + n;
+;// CONCATENATED MODULE: ./src/helper.js
+function pad2 (n) {
+  return (n < 10 ? '0' : '') + n
 }
 
-function dateFormat(date) {
-    const s = `${date.getFullYear()}-${pad2((date.getMonth() + 1))}-${pad2(date.getDate())}`;
-    if (!new RegExp(/^\d{4}-\d{2}-\d{2}/).test(s)) {
-        throw (date);
-    }
-    return s;
+function dateFormat (date) {
+  const s = `${date.getFullYear()}-${pad2((date.getMonth() + 1))}-${pad2(date.getDate())}`
+  const pattern = /^\d{4}-\d{2}-\d{2}/
+  if (!new RegExp(pattern).test(s)) {
+    throw (date)
+  }
+  return s
 }
+
 ;// CONCATENATED MODULE: ./node_modules/bail/index.js
 /**
  * Throw a given error.
@@ -23787,9 +23948,10 @@ var follow_redirects_default = /*#__PURE__*/__nccwpck_require__.n(follow_redirec
 ;// CONCATENATED MODULE: external "crypto"
 const external_crypto_namespaceObject = require("crypto");
 var external_crypto_default = /*#__PURE__*/__nccwpck_require__.n(external_crypto_namespaceObject);
-// EXTERNAL MODULE: external "fs"
-var external_fs_ = __nccwpck_require__(7147);
-;// CONCATENATED MODULE: ./parse.js
+;// CONCATENATED MODULE: ./src/parse.js
+
+
+
 
 
 
@@ -23800,20 +23962,12 @@ var external_fs_ = __nccwpck_require__(7147);
 
 const {
   http
-} = (follow_redirects_default());
+} = (follow_redirects_default())
 const {
   https
-} = (follow_redirects_default());
+} = (follow_redirects_default())
 
-
-
-
-
-
-
-
-
-function isInlineCommand(node) {
+function isInlineCommand (node) {
   return node.children &&
     node.children.length === 1 &&
     node.children[0].type === 'blockquote' &&
@@ -23825,52 +23979,67 @@ function isInlineCommand(node) {
     node.children[0].children[0].children &&
     node.children[0].children[0].children.length === 1 &&
     node.children[0].children[0].children[0].type === 'paragraph' &&
+    // 适配 >>> code `http://a.b/__init__.py` 防止转义
+    // >>> cmd `a` b `c`
     // 4
     node.children[0].children[0].children[0].children &&
-    node.children[0].children[0].children[0].children.length === 1 &&
-    node.children[0].children[0].children[0].children[0].type === 'text';
+    node.children[0].children[0].children[0].children.length >= 1 &&
+    (node.children[0].children[0].children[0].children[0].type === 'text' || node.children[0].children[0].children[0].children[0].type === 'inlineCode')
 }
 
-function isURL(s) {
-  return new RegExp(/^https?:\/\/[^\r\n]+$/).test(s);
+function getInlineCommand (node) {
+  const result = []
+  const paragraph = node.children[0].children[0].children[0].children
+  for (let i = 0; i < paragraph.length; i++) {
+    if (paragraph[i].value && paragraph[i].value !== '') {
+      result.push(paragraph[i].value)
+    }
+  }
+  return result
 }
 
-function onlyTitleAndLink(node) {
+function isURL (s) {
+  const pattern = /^https?:\/\/[^\r\n]+$/
+  return new RegExp(pattern).test(s)
+}
+
+function onlyTitleAndLink (node) {
   return node.children &&
     node.children.length === 2 &&
     node.children[1].type === 'paragraph' &&
     isURL(getText(node.children[1])) &&
-    (node.children[0].type === 'heading' || node.children[0].type === 'paragraph');
+    (node.children[0].type === 'heading' || node.children[0].type === 'paragraph')
 }
 
-function getText(heading) {
-  let result = '';
+function getText (heading) {
+  let result = ''
   visit(heading, (node) => {
     if ((!result || result === '') && node.type === 'text') {
-      result = node.value;
+      result = node.value
     }
-  });
-  return result;
+  })
+  return result
 }
 
-async function myRemarkPlugin(tree, result) {
-  let last = {};
+async function myRemarkPlugin (tree, result) {
+  let last = {}
   visit(tree, (node) => {
-    // console.log(node);
+    console.log(node)
     switch (node.type) {
       case 'blockquote': {
         if (node.type === 'blockquote' && last.type !== 'blockquote') {
           if (isInlineCommand(node)) {
-            const textNode = node.children[0].children[0].children[0].children[0];
-            yargs_default()((0,shlex/* split */.V)(textNode.value))
+            // console.log('getInlineCommand', getInlineCommand(node))
+            const textNode = node.children[0].children[0].children[0].children[0]
+            yargs_default()((0,shlex/* split */.V)(getInlineCommand(node).join(' ')))
               .command({
                 command: 'desc <descriptions...>',
                 desc: 'define the descriptions',
                 handler: (args) => {
                   if (!result.descriptions) {
-                    result.descriptions = args.descriptions;
+                    result.descriptions = args.descriptions
                   } else {
-                    result.descriptions.push(...args.descriptions);
+                    result.descriptions.push(...args.descriptions)
                   }
                 }
               })
@@ -23878,7 +24047,7 @@ async function myRemarkPlugin(tree, result) {
                 command: 'author [author]',
                 desc: 'define the author',
                 handler: (args) => {
-                  result.author = args.author;
+                  result.author = args.author
                 }
               })
               .command({
@@ -23888,49 +24057,47 @@ async function myRemarkPlugin(tree, result) {
                   result.img = {
                     node: node,
                     args: args,
-                    children: textNode.children,
+                    children: textNode.children
                   }
-
-
                 }
               })
               .command({
                 command: 'jump [link]',
                 desc: '',
                 handler: (args) => {
-                  result.jumplink = args.link;
+                  result.jumplink = args.link
                 }
               })
               .command({
                 command: 'del [link]',
                 desc: '',
                 handler: (args) => {
-                  console.log(args.link); // TODO
+                  // TODO del
+                  console.log(args.link)
                 }
               })
               .command({
+                // TODO {"resource":"IssueComment","code":"custom","field":"body","message":"body is too long (maximum is 65536 characters)"}
+                // 思路 超过限制的文件下载到 assets 分支，生成 jekyll post，修改 issue 中的链接为 assets 链接
                 command: 'code [link]',
                 desc: 'download remote code and insert code block',
                 builder: yargs => yargs.options({
                   lang: {
-                    description: 'language',
+                    description: 'language'
                   }
                 }),
                 handler: (args) => {
-
                   result.code = {
                     node: node,
                     args: args,
-                    children: textNode.children,
+                    children: textNode.children
                   }
-
                 }
               })
-              .parse();
-
+              .parse()
           }
         }
-        break;
+        break
       }
       // case 'heading': {
       //   if (!result.title || result.title === '') {
@@ -23940,171 +24107,165 @@ async function myRemarkPlugin(tree, result) {
       // }
       case 'text': {
         if (!result.title || result.title === '') {
-          result.title = getText(node); // 取第一个 text 为 title
+          result.title = getText(node) // 取第一个 text 为 title
         }
-        break;
+        break
       }
       default: {
         // console.log(node.type);
-        break;
+        break
       }
     }
-    last = node;
-  });
+    last = node
+  })
 }
 
-async function parseMarkdown(github, context, filenamePrefix, rawLink, markdown) {
-  const result = {};
+async function parseMarkdown (github, context, filenamePrefix, rawLink, markdown) {
+  const result = {}
   const tree = remark()
     // .use(myRemarkPlugin(result))
-    .parse(markdown);
+    .parse(markdown)
 
   // console.log(tree);
 
-  await myRemarkPlugin(tree, result);
+  await myRemarkPlugin(tree, result)
 
   if (result.code) {
     await getPromise(result.code.args.link).then((r) => {
-      result.code.node.type = 'code';
-      result.code.node.lang = result.code.args.lang;
-      result.code.node.meta = null;
-      result.code.node.value = r.toString();
+      result.code.node.type = 'code'
+      result.code.node.lang = result.code.args.lang || 'txt'
+      result.code.node.meta = null
+      result.code.node.value = r.toString()
 
-      result.code.node.children = result.code.children;
-      result.needEdit = true;
+      result.code.node.children = result.code.children
+      result.needEdit = true
     }).catch((error) => {
-      console.log(error);
-    });
+      console.log(error)
+    })
   }
 
   if (result.img) {
-    result.img.node.type = 'image';
-    result.img.node.title = null;
-    result.img.node.alt = result.img.args.link;
-    result.img.node.url = result.img.args.link;
+    result.img.node.type = 'image'
+    result.img.node.title = null
+    result.img.node.alt = result.img.args.link
+    result.img.node.url = result.img.args.link
 
-
-    let r = await getPromise(result.img.args.link);
+    const r = await getPromise(result.img.args.link)
 
     try {
       // sha1
-      let hash = external_crypto_default().createHash('sha1');
-      hash.update(r);
-      let sha1Hex = hash.digest('hex');
+      const hash = external_crypto_default().createHash('sha1')
+      hash.update(r)
+      const sha1Hex = hash.digest('hex')
 
       if (github) {
         // 422 已上传
         // 201 上传成功
-        const branch = 'assets';
+        const branch = 'assets'
 
-        let status;
+        let status
         try {
-          let response = await github.rest.repos.createOrUpdateFileContents({
+          const response = await github.rest.repos.createOrUpdateFileContents({
             owner: context.repo.owner,
             repo: context.repo.repo,
             branch: branch,
-            path: `${filenamePrefix}/${sha1Hex}.jpg`, // TODO 识别图片后缀
+            // TODO 识别图片后缀
+            path: `${filenamePrefix}/${sha1Hex}.jpg`,
             message: `add ${sha1Hex}.jpg via github-actions${'\n\n'}${rawLink}${'\n'}${result.img.args.link}`,
-            content: r.toString('base64'),
+            content: r.toString('base64')
           })
-          status = response.status;
+          status = response.status
         } catch (error) {
-          console.log('createOrUpdateFileContents', error);
+          console.log('createOrUpdateFileContents', error)
           if (error.response) {
-            status = error.response.status;
+            status = error.response.status
           }
-
         }
 
         if (status === 201 || status === 422) {
-
           result.img.node.url =
-            result.img.node.url = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/${branch}/${filenamePrefix}/${sha1Hex}.jpg`;
+            result.img.node.url = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/${branch}/${filenamePrefix}/${sha1Hex}.jpg`
         }
       }
-
     } catch (error) {
-      console.log('createOrUpdateFileContents', error);
+      console.log('createOrUpdateFileContents', error)
     }
 
+    result.img.node.children = result.img.children
 
-
-    result.img.node.children = result.img.children;
-
-    result.needEdit = true;
+    result.needEdit = true
   }
 
-  result.body = remark().stringify(tree);
+  result.body = remark().stringify(tree)
 
   // 只有链接
   if (isURL(result.title) && result.body.replace(/\n/g, '') === result.title) {
     // TODO 抓取标题
-    result.body = `[${result.title}](${result.title})`;
-    result.jumplink = result.title;
-    result.needEdit = false;
+    result.body = `[${result.title}](${result.title})`
+    result.jumplink = result.title
+    result.needEdit = false
   }
 
   // 只有标题和链接
   if (onlyTitleAndLink(tree)) {
-    // TODO 抓取标题
-    let link = getText(tree.children[1]);
-    let title = getText(tree.children[0]);
-    result.body = `[${title}](${link})`;
-    result.jumplink = link;
-    result.needEdit = false;
-    result.title = title;
+    const link = getText(tree.children[1])
+    const title = getText(tree.children[0])
+    result.body = `[${title}](${link})`
+    result.jumplink = link
+    result.needEdit = false
+    result.title = title
   }
 
-  return result;
+  return result
 }
 
-
-function getPromise(link) {
+function getPromise (link) {
   return new Promise((resolve, reject) => {
-    let protocol = https;
-    if (new RegExp(/^http:/).test(link)) {
-      protocol = http;
+    let protocol = https
+    const pattern = /^http:/
+    if (new RegExp(pattern).test(link)) {
+      protocol = http
     }
     protocol.get(link, (response) => {
-      const data = [];
+      const data = []
 
       response.on('data', (fragments) => {
-        data.push(fragments);
-      });
+        data.push(fragments)
+      })
 
       response.on('end', () => {
-        resolve(Buffer.concat(data));
-      });
+        resolve(Buffer.concat(data))
+      })
 
       response.on('error', (error) => {
-        reject(error);
-      });
-    });
-  });
+        reject(error)
+      })
+    })
+  })
 }
-;// CONCATENATED MODULE: ./index.js
+
+;// CONCATENATED MODULE: ./src/index.js
 
 
 
 
+function postTemplate (date, title, body, description, jumplink, published, author) {
+  let desc = ''
+  if (description && description !== '') {
+    desc = 'description:  |\n'
+    desc += description.replace(/^[ \t]*/gm, '  ')
+  }
 
-function postTemplate(date, title, body, description, jumplink, published, author) {
-    let desc = '';
-    if (description && description !== '') {
-        desc = 'description:  |\n';
-        desc += description.replace(/^[ \t]*/gm, '  ');
-    }
+  let jl = ''
+  if (jumplink) {
+    jl = `jumplink: ${jumplink}`
+  }
 
-    let jl = '';
-    if (jumplink) {
-        jl = `jumplink: ${jumplink}`;
-    }
+  if (!author || author === '') {
+    author = 'Notes'
+  }
 
-    if (!author || author === '') {
-        author = 'Notes';
-    }
-
-    return `---
+  return `---
 layout: post
 published: ${published}
 author: ${author}
@@ -24116,317 +24277,311 @@ ${jl}
 ---
 
 ${body}
-`;
+`
 }
 
+async function deletePost (github, context,
+  issueId, issueCommentId,
+  filenamePrefix) {
+  const path = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`
+  const branch = 'gh-pages'
+  let status
+  let sha = ''
 
-async function deletePost(github, context,
-    issueId, issueCommentId,
-    filenamePrefix) {
+  // 404 不存在
+  // 200 存在
+  status = 0
+  try {
+    const response = await github.rest.repos.getContent({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      ref: branch,
+      path: path
+    })
+    sha = response.data.sha
+    console.log('sha', sha)
+  } catch (error) {
+    console.log(error)
+    return
+  }
 
-
-    const path = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`;
-    const branch = 'gh-pages';
-    let status;
-    let sha = '';
-
-    // 404 不存在
-    // 200 存在
-    status = 0;
-    try {
-        let response = await github.rest.repos.getContent({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: branch,
-            path: path,
-        });
-        sha = response.data.sha;
-        console.log('sha', sha);
-    } catch (error) {
-        console.log(error);
-        return;
+  // 201 上传成功
+  // 200 更新成功
+  status = 0
+  try {
+    const response = await github.rest.repos.deleteFile({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      branch: branch,
+      path: path,
+      message: `delete ${path} via github-actions`,
+      sha: sha
+    })
+    status = response.status
+  } catch (error) {
+    if (error.response) {
+      status = error.response.status
     }
+  }
 
-    // 201 上传成功
-    // 200 更新成功
-    status = 0;
-    try {
-        let response = await github.rest.repos.deleteFile({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            branch: branch,
-            path: path,
-            message: `delete ${path} via github-actions`,
-            sha: sha,
-        })
-        status = response.status;
-    } catch (error) {
-        if (error.response) {
-            status = error.response.status;
-        }
-    }
-
-    console.log("delete post", status);
-
+  console.log('delete post', status)
 }
 
-async function createPost(github, context,
-    issueId, issueCommentId,
-    filenamePrefix, date,
-    rawTitle, rawBody, rawLink
+async function createPost (github, context,
+  issueId, issueCommentId,
+  filenamePrefix, date,
+  rawTitle, rawBody, rawLink
 ) {
-    let result = await parseMarkdown(github, context,
-        filenamePrefix, rawLink,
-        rawBody);
-    console.log('parse', result);
-    if (rawTitle && rawTitle !== '') {
-        result.title = rawTitle;
+  const result = await parseMarkdown(github, context,
+    filenamePrefix, rawLink,
+    rawBody)
+  console.log('parse', result)
+  if (rawTitle && rawTitle !== '') {
+    result.title = rawTitle
+  }
+
+  if (!result.body || result.body === '') {
+    result.body = rawBody
+  }
+
+  if (result.descriptions) {
+    result.description = result.descriptions.join('\n')
+  }
+
+  const post = postTemplate(date, result.title, result.body, result.description, result.jumplink, true, result.author)
+
+  const path = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`
+  const branch = 'gh-pages'
+  let status
+  let sha = ''
+
+  // 404 不存在
+  // 200 存在
+  status = 0
+  try {
+    const response = await github.rest.repos.getContent({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      ref: branch,
+      path: path
+    })
+    sha = response.data.sha
+    console.log('sha', sha)
+  } catch (error) {
+    console.log('getContent', error)
+  }
+
+  // 201 上传成功
+  // 200 更新成功
+  status = 0
+  try {
+    const response = await github.rest.repos.createOrUpdateFileContents({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      branch: branch,
+      path: path,
+      message: `add ${path} via github-actions${'\n\n'}${result.title}${'\n'}${rawLink}`,
+      content: Buffer.from(post, 'utf8').toString('base64'),
+      sha: sha
+    })
+    status = response.status
+  } catch (error) {
+    console.log('createOrUpdateFileContents', error)
+    if (error.response) {
+      status = error.response.status
     }
+  }
 
-    if (!result.body || result.body === '') {
-        result.body = rawBody;
-    }
-
-    if (result.descriptions) {
-        result.description = result.descriptions.join('\n');
-    }
-
-    const post = postTemplate(date, result.title, result.body, result.description, result.jumplink, true, result.author);
-
-
-    const path = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`;
-    const branch = 'gh-pages';
-    let status;
-    let sha = '';
-
-    // 404 不存在
-    // 200 存在
-    status = 0;
-    try {
-        let response = await github.rest.repos.getContent({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: branch,
-            path: path,
-        });
-        sha = response.data.sha;
-        console.log('sha', sha);
-    } catch (error) {
-        console.log('getContent', error);
-    }
-
-    // 201 上传成功
-    // 200 更新成功
-    status = 0;
-    try {
-        let response = await github.rest.repos.createOrUpdateFileContents({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            branch: branch,
-            path: path,
-            message: `add ${path} via github-actions${'\n\n'}${result.title}${'\n'}${rawLink}`,
-            content: Buffer.from(post, 'utf8').toString('base64'),
-            sha: sha,
+  if (status === 200 || status === 201 || status === 422) {
+    // 成功
+    if (result.needEdit) {
+      if (issueCommentId === 0) {
+        const response = await github.rest.issues.update({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          issue_number: issueId,
+          body: result.body,
+          title: result.title
         })
-        status = response.status;
-    } catch (error) {
-        console.log('createOrUpdateFileContents', error);
-        if (error.response) {
-            status = error.response.status;
-        }
+        console.log('issues.update', response)
+      } else {
+        const response = await github.rest.issues.updateComment({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          comment_id: issueCommentId,
+          body: result.body
+        })
+        console.log('issues.updateComment', response)
+      }
     }
-
-    if (status === 200 || status === 201 || status === 422) {
-        // 成功
-        if (result.needEdit) {
-            if (issueCommentId === 0) {
-                let response = await github.rest.issues.update({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issueId,
-                    body: result.body,
-                    title: result.title,
-                });
-                console.log('issues.update', response);
-            } else {
-                let response = await github.rest.issues.updateComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    comment_id: issueCommentId,
-                    body: result.body,
-                });
-                console.log('issues.updateComment', response);
-            }
-
-        }
-    } else {
-        throw (`status=${status}`);
-    }
+  } else {
+    throw new Error(`status=${status}`)
+  }
 }
 
-async function entry({
-    github,
-    context,
-    core
+async function entry ({
+  github,
+  context,
+  core
 }) {
-    console.log('context.eventName', context.eventName);
-    console.log('context.payload.action', context.payload.action);
+  console.log('context.eventName', context.eventName)
+  console.log('context.payload.action', context.payload.action)
 
-    switch (context.eventName) {
-        case 'issues': {
-            const filenamePrefix = dateFormat(new Date(context.payload.issue.created_at));
-            const issueId = context.payload.issue.number;
-            const issueCommentId = 0;
-            const rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}`;
-            let date = context.payload.issue.updated_at;
-            if (!date) {
-                date = context.payload.issue.created_at;
-            }
+  switch (context.eventName) {
+    case 'issues': {
+      const filenamePrefix = dateFormat(new Date(context.payload.issue.created_at))
+      const issueId = context.payload.issue.number
+      const issueCommentId = 0
+      const rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}`
+      let date = context.payload.issue.updated_at
+      if (!date) {
+        date = context.payload.issue.created_at
+      }
 
+      console.log('filenamePrefix', filenamePrefix)
+      console.log('issueId', issueId)
+      console.log('date', date)
+      console.log('rawLink', rawLink)
 
-            console.log('filenamePrefix', filenamePrefix);
-            console.log('issueId', issueId);
-            console.log('date', date);
-            console.log('rawLink', rawLink);
+      const rawBody = context.payload.issue.body
+      const rawTitle = context.payload.issue.title
 
-            const rawBody = context.payload.issue.body;
-            const rawTitle = context.payload.issue.title;
-
-            switch (context.payload.action) {
-                case 'opened': {
-                    await createPost(github, context,
-                        issueId, issueCommentId,
-                        filenamePrefix, date,
-                        rawTitle, rawBody, rawLink);
-                    break;
-                }
-                case 'edited': {
-                    await createPost(github, context,
-                        issueId, issueCommentId,
-                        filenamePrefix, date,
-                        rawTitle, rawBody, rawLink);
-                    break;
-                }
-                case 'deleted': {
-                    await deletePost(github, context,
-                        issueId, issueCommentId,
-                        filenamePrefix);
-                    break;
-                }
-                case 'transferred': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'pinned': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'unpinned': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'closed': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'reopened': {
-                    await createPost(github, context,
-                        issueId, issueCommentId,
-                        filenamePrefix, date,
-                        rawTitle, rawBody, rawLink);
-                    break;
-                }
-                case 'assigned': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'unassigned': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'labeled': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'unlabeled': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'locked': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'unlocked': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'milestoned': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                case 'demilestoned': {
-                    console.log('Unsupported yet');
-                    break;
-                }
-                default: {
-                    console.log('unkown event action:', context.eventName, context.payload.action);
-                    break;
-                }
-            }
-            break;
+      switch (context.payload.action) {
+        case 'opened': {
+          await createPost(github, context,
+            issueId, issueCommentId,
+            filenamePrefix, date,
+            rawTitle, rawBody, rawLink)
+          break
         }
-        case 'issue_comment': {
-            const filenamePrefix = dateFormat(new Date(context.payload.comment.created_at));
-            const issueId = context.payload.issue.number;
-            const issueCommentId = context.payload.comment.id;
-            const rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}#issuecomment-${context.payload.comment.id}`;
-            let date = context.payload.comment.updated_at;
-            if (!date) {
-                date = context.payload.comment.created_at;
-            }
-
-            console.log('filenamePrefix', filenamePrefix);
-            console.log('issueId', issueId);
-            console.log('date', date);
-            console.log('rawLink', rawLink);
-
-            const rawBody = context.payload.comment.body;
-            const rawTitle = context.payload.comment.title;
-
-            switch (context.payload.action) {
-                case 'created': {
-                    await createPost(github, context,
-                        issueId, issueCommentId,
-                        filenamePrefix, date,
-                        rawTitle, rawBody, rawLink);
-                    break;
-                }
-                case 'edited': {
-                    await createPost(github, context,
-                        issueId, issueCommentId,
-                        filenamePrefix, date,
-                        rawTitle, rawBody, rawLink);
-                    break;
-                }
-                case 'deleted': {
-                    await deletePost(github, context,
-                        issueId, issueCommentId,
-                        filenamePrefix);
-                    break;
-                }
-                default: {
-                    console.log('unkown event action:', context.eventName, context.payload.action);
-                    break;
-                }
-            }
-            break;
+        case 'edited': {
+          await createPost(github, context,
+            issueId, issueCommentId,
+            filenamePrefix, date,
+            rawTitle, rawBody, rawLink)
+          break
+        }
+        case 'deleted': {
+          await deletePost(github, context,
+            issueId, issueCommentId,
+            filenamePrefix)
+          break
+        }
+        case 'transferred': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'pinned': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'unpinned': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'closed': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'reopened': {
+          await createPost(github, context,
+            issueId, issueCommentId,
+            filenamePrefix, date,
+            rawTitle, rawBody, rawLink)
+          break
+        }
+        case 'assigned': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'unassigned': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'labeled': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'unlabeled': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'locked': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'unlocked': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'milestoned': {
+          console.log('Unsupported yet')
+          break
+        }
+        case 'demilestoned': {
+          console.log('Unsupported yet')
+          break
         }
         default: {
-            console.log('unkown event:', context.eventName);
-            break;
+          console.log('unkown event action:', context.eventName, context.payload.action)
+          break
         }
+      }
+      break
     }
+    case 'issue_comment': {
+      const filenamePrefix = dateFormat(new Date(context.payload.comment.created_at))
+      const issueId = context.payload.issue.number
+      const issueCommentId = context.payload.comment.id
+      const rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}#issuecomment-${context.payload.comment.id}`
+      let date = context.payload.comment.updated_at
+      if (!date) {
+        date = context.payload.comment.created_at
+      }
+
+      console.log('filenamePrefix', filenamePrefix)
+      console.log('issueId', issueId)
+      console.log('date', date)
+      console.log('rawLink', rawLink)
+
+      const rawBody = context.payload.comment.body
+      const rawTitle = context.payload.comment.title
+
+      switch (context.payload.action) {
+        case 'created': {
+          await createPost(github, context,
+            issueId, issueCommentId,
+            filenamePrefix, date,
+            rawTitle, rawBody, rawLink)
+          break
+        }
+        case 'edited': {
+          await createPost(github, context,
+            issueId, issueCommentId,
+            filenamePrefix, date,
+            rawTitle, rawBody, rawLink)
+          break
+        }
+        case 'deleted': {
+          await deletePost(github, context,
+            issueId, issueCommentId,
+            filenamePrefix)
+          break
+        }
+        default: {
+          console.log('unkown event action:', context.eventName, context.payload.action)
+          break
+        }
+      }
+      break
+    }
+    default: {
+      console.log('unkown event:', context.eventName)
+      break
+    }
+  }
 }
+
 })();
 
 module.exports = __webpack_exports__;
