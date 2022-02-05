@@ -9314,7 +9314,19 @@ __nccwpck_require__.d(constructs_namespaceObject, {
   "text": () => (constructs_text)
 });
 
+// EXTERNAL MODULE: ./node_modules/follow-redirects/index.js
+var follow_redirects = __nccwpck_require__(7707);
+var follow_redirects_default = /*#__PURE__*/__nccwpck_require__.n(follow_redirects);
 ;// CONCATENATED MODULE: ./src/helper.js
+
+
+const {
+  http
+} = (follow_redirects_default())
+const {
+  https
+} = (follow_redirects_default())
+
 function pad2 (n) {
   return (n < 10 ? '0' : '') + n
 }
@@ -9326,6 +9338,31 @@ function dateFormat (date) {
     throw (date)
   }
   return s
+}
+
+function getPromise (link) {
+  return new Promise((resolve, reject) => {
+    let protocol = https
+    const pattern = /^http:/
+    if (new RegExp(pattern).test(link)) {
+      protocol = http
+    }
+    protocol.get(link, (response) => {
+      const data = []
+
+      response.on('data', (fragments) => {
+        data.push(fragments)
+      })
+
+      response.on('end', () => {
+        resolve(Buffer.concat(data))
+      })
+
+      response.on('error', (error) => {
+        reject(error)
+      })
+    })
+  })
 }
 
 ;// CONCATENATED MODULE: ./node_modules/bail/index.js
@@ -23942,9 +23979,6 @@ var shlex = __nccwpck_require__(5659);
 // EXTERNAL MODULE: ./node_modules/yargs/index.js
 var yargs = __nccwpck_require__(9287);
 var yargs_default = /*#__PURE__*/__nccwpck_require__.n(yargs);
-// EXTERNAL MODULE: ./node_modules/follow-redirects/index.js
-var follow_redirects = __nccwpck_require__(7707);
-var follow_redirects_default = /*#__PURE__*/__nccwpck_require__.n(follow_redirects);
 ;// CONCATENATED MODULE: external "crypto"
 const external_crypto_namespaceObject = require("crypto");
 var external_crypto_default = /*#__PURE__*/__nccwpck_require__.n(external_crypto_namespaceObject);
@@ -23958,14 +23992,6 @@ var external_crypto_default = /*#__PURE__*/__nccwpck_require__.n(external_crypto
 
 
 
-
-
-const {
-  http
-} = (follow_redirects_default())
-const {
-  https
-} = (follow_redirects_default())
 
 function isInlineCommand (node) {
   return node.children &&
@@ -24219,31 +24245,6 @@ async function parseMarkdown (github, context, filenamePrefix, rawLink, markdown
   return result
 }
 
-function getPromise (link) {
-  return new Promise((resolve, reject) => {
-    let protocol = https
-    const pattern = /^http:/
-    if (new RegExp(pattern).test(link)) {
-      protocol = http
-    }
-    protocol.get(link, (response) => {
-      const data = []
-
-      response.on('data', (fragments) => {
-        data.push(fragments)
-      })
-
-      response.on('end', () => {
-        resolve(Buffer.concat(data))
-      })
-
-      response.on('error', (error) => {
-        reject(error)
-      })
-    })
-  })
-}
-
 ;// CONCATENATED MODULE: ./src/index.js
 
 
@@ -24281,12 +24282,11 @@ ${body}
 }
 
 async function deletePost (github, context,
-  issueId, issueCommentId,
-  filenamePrefix) {
-  const path = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`
+  issueId, issueCommentId) {
   const branch = 'gh-pages'
   let status
   let sha = ''
+  let name = ''
 
   // 404 不存在
   // 200 存在
@@ -24296,10 +24296,21 @@ async function deletePost (github, context,
       owner: context.repo.owner,
       repo: context.repo.repo,
       ref: branch,
-      path: path
+      path: '_posts'
     })
-    sha = response.data.sha
-    console.log('sha', sha)
+    if (response.data && response.data.length > 0) {
+      for (let i = 0; i < response.data.length; i++) {
+        if (response.data[i].name && response.data[i].name.indexOf(`-${issueId}-${issueCommentId}.md`) !== -1) {
+          sha = response.data[i].sha
+          name = response.data[i].name
+          break
+        }
+      }
+      console.log('sha', sha)
+      if (!sha || sha === '' || !name || name === '') {
+        return
+      }
+    }
   } catch (error) {
     console.log(error)
     return
@@ -24313,8 +24324,8 @@ async function deletePost (github, context,
       owner: context.repo.owner,
       repo: context.repo.repo,
       branch: branch,
-      path: path,
-      message: `delete ${path} via github-actions`,
+      path: `_posts/${name}`,
+      message: `delete ${name} via github-actions`,
       sha: sha
     })
     status = response.status
@@ -24330,8 +24341,14 @@ async function deletePost (github, context,
 async function createPost (github, context,
   issueId, issueCommentId,
   filenamePrefix, date,
-  rawTitle, rawBody, rawLink
+  rawTitle, rawBody, rawLink,
+  minimized
 ) {
+  console.log('rawLink', rawLink)
+  console.log('rawTitle', rawTitle)
+  console.log('rawBody', rawBody)
+  console.log('published', !minimized)
+
   const result = await parseMarkdown(github, context,
     filenamePrefix, rawLink,
     rawBody)
@@ -24348,7 +24365,7 @@ async function createPost (github, context,
     result.description = result.descriptions.join('\n')
   }
 
-  const post = postTemplate(date, result.title, result.body, result.description, result.jumplink, true, result.author)
+  const post = postTemplate(date, result.title, result.body, result.description, result.jumplink, !minimized, result.author)
 
   const path = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`
   const branch = 'gh-pages'
@@ -24463,8 +24480,7 @@ async function entry ({
         }
         case 'deleted': {
           await deletePost(github, context,
-            issueId, issueCommentId,
-            filenamePrefix)
+            issueId, issueCommentId)
           break
         }
         case 'transferred': {
@@ -24556,16 +24572,39 @@ async function entry ({
           break
         }
         case 'edited': {
+          let minimized = false
+          // hide(minimize)/unhide 会触发 edited，但是 event payload 中不会有信息。
+          // github 没有提供 api，请求页面来判断
+          /*
+            <div class=" timeline-comment-group js-minimizable-comment-group js-targetable-element TimelineItem-body my-0 " id="issuecomment-1030642768">
+      <clipboard-copy aria-label="Copy link" for="issuecomment-1030642768-permalink" role="menuitem" data-view-component="true" class="dropdown-item btn-link">
+      <a href="#issuecomment-1030642768" id="issuecomment-1030642768-permalink" class="Link--secondary js-timestamp"><relative-time datetime="2022-02-05T15:15:39Z" class="no-wrap">Feb 5, 2022</relative-time></a>
+      <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="js-comment-update" id="issuecomment-1030642768-edit-form" action="/hellodword/issue-notes/issue_comments/1030642768" accept-charset="UTF-8" method="post"><input type="hidden" name="_method" value="put" autocomplete="off" /><input type="hidden" data-csrf="true" name="authenticity_token" value="88LmFZZSuYGVhpWnJnbnOwfmv8PdsmLaiiqvQdz5kD5g56U2jpNyw4xoB8Y7p4ATOgBrn5wg4F220Ce/8Ayrmg==" />
+  src="/hellodword/issue-notes/issue_comments/1030642768/edit_form?textarea_id=issuecomment-1030642768-body&amp;comment_context="
+          */
+          if (context.payload.changes && context.payload.changes.body && context.payload.changes.body.from &&
+            context.payload.changes.body.from === context.payload.comment.body) {
+            try {
+              const r = await getPromise(`https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}`)
+              console.log('html', r.toString())
+              if (new RegExp(`"issuecomment-${context.payload.comment.id}"`, 'gm').test(r.toString()) &&
+              !new RegExp(`"issuecomment-${context.payload.comment.id}-permalink"`, 'gm').test(r.toString())) {
+                minimized = true
+              }
+            } catch (error) {
+              console.log(error)
+            }
+          }
           await createPost(github, context,
             issueId, issueCommentId,
             filenamePrefix, date,
-            rawTitle, rawBody, rawLink)
+            rawTitle, rawBody, rawLink,
+            minimized)
           break
         }
         case 'deleted': {
           await deletePost(github, context,
-            issueId, issueCommentId,
-            filenamePrefix)
+            issueId, issueCommentId)
           break
         }
         default: {

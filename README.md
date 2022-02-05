@@ -42,7 +42,7 @@ Github Ussues 支持：
 
 ## TODO
 
-  - [ ] inline commands
+  - inline commands
     > 设计了一些 inline commands，选用了 markdown 里的三层 quote 作为标识，而不是容易影响 markdown 格式的 jekyll 的 YAML front matter。刚好 github-actions 这个 app 对 issues 进行的操作是不会触发 Github Actions 的，可以用于编译修改包含 inline commands 的 issue/comment。
     - [x] `author` 对应 jekyll YAML front matter 的 author
       ```
@@ -90,11 +90,12 @@ Github Ussues 支持：
 
           >>> archive https://tailscale.com/blog/how-nat-traversal-works/
       ```
-  - [x] event `issue_comment`:
+  - event `issue_comment`:
     - [x] created
     - [x] edited
     - [x] deleted
-  - [ ] event `issues`:
+    - [x] `hide/unhide` 这个只提供了操作 minimize 的 api，但 api result 中没有任何信息，但是会触发 edited，通过请求网页来判断
+  - event `issues`:
     - [x] opened
     - [x] edited
     - [x] deleted

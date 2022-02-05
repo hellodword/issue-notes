@@ -1,0 +1,26 @@
+name: debug script
+
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        description: "script"
+        required: true
+
+# try{let data=await github.rest.repos.getContent({owner:context.repo.owner,repo:context.repo.repo,ref:'gh-pages',path:'_posts',});console.log("data",typeof(data),data)}catch(error){console.log("error",typeof(error),error);console.log("response.status=",error.response.status)}
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check
+        if: ${{ github.actor != github.repository_owner }}
+        run: |
+          exit 1
+      - uses: actions/github-script@v5
+        with:
+          script: |
+            ${{ github.event.inputs.script }}
+      

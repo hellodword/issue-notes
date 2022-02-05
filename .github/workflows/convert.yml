@@ -19,7 +19,7 @@ jobs:
           echo "github.event.action: ${{ github.event.action }}"
           echo "github.actor: ${{ github.actor }}"
           echo "github.repository_owner: ${{ github.repository_owner }}"
-
+          cat "$GITHUB_EVENT_PATH"
       - name: check
         if: ${{ github.actor != github.repository_owner }}
         run: |
