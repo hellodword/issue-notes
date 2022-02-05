@@ -31,24 +31,24 @@ jobs:
           fetch-depth: 0
           ref: 'main'
           path: 'main'
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          ref: 'gh-pages'
-          path: 'gh-pages'
+      # - name: Checkout
+      #   uses: actions/checkout@v2
+      #   with:
+      #     fetch-depth: 0
+      #     ref: 'gh-pages'
+      #     path: 'gh-pages'
       - name: convert.js
         uses: actions/github-script@v5
         with:
           script: |
-            const script = require('./main/.github/workflows/convert.js');
+            const script = require('./main/.github/workflows/convert.js').default;
             await script({github, context, core})
 
-      - name: commit
-        run: |
-          cd gh-pages
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add _posts
-          git commit -m "auto commit" || exit 0
-          git push -u origin gh-pages
+      # - name: commit
+      #   run: |
+      #     cd gh-pages
+      #     git config user.name github-actions[bot]
+      #     git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      #     git add _posts
+      #     git commit -m "auto commit" || exit 0
+      #     git push -u origin gh-pages
