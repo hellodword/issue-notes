@@ -24100,6 +24100,10 @@ async function myRemarkPlugin (tree, result) {
                 handler: (args) => {
                   // TODO del
                   console.log(args.link)
+                  if (!result.del) {
+                    result.del = []
+                  }
+                  result.del.push(args.link)
                 }
               })
               .command({
@@ -24353,6 +24357,21 @@ async function createPost (github, context,
     filenamePrefix, rawLink,
     rawBody)
   console.log('parse', result)
+
+  if (result.del) {
+    console.log('delete', result.del)
+    // https://.../2022/02/03/1-1029028094.html
+    // https://.../issues/1#issuecomment-1029028094
+    const regex = /(\/(\d+)-(\d+)\.html)|(\/(\d+)#issuecomment-(\d+)$)/
+    for (let i = 0; i < result.del.length; i++) {
+      const m = regex.exec(result.del[i])
+      const issueId = m[2] || m[5]
+      const issueCommentId = m[3] || m[6]
+      deletePost(github, context, issueId, issueCommentId)
+    }
+    return
+  }
+
   if (rawTitle && rawTitle !== '') {
     result.title = rawTitle
   }

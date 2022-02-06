@@ -4,7 +4,7 @@
 
 有点类似于 [issue-to-jekyll-post](https://github.com/yoshum/issue-to-jekyll-post) 这个项目，通过 `issues` 和 `issue_comment` 这两个 event 触发 Github Actions，将对应的 issue 编译成 jekyll 的 `_posts/*.md`，接下来就交给 Github Pages 了 。
 
-Github Ussues 支持：
+Github Issues 支持：
 - 全平台
 - 搜索
 - markdown 编辑器
@@ -66,13 +66,18 @@ Github Ussues 支持：
       ```
       >>> jump [LINK]
       ```
-    - [ ] `del` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了
+    - [x] `del` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了
       ```
       >>> del [LINK]
 
           >>> del https://hellodword.github.io/issue-notes/2022/02/03/1-1029028094.html
 
           >>> del https://github.com/hellodword/issue-notes/issues/1#issuecomment-1029028094
+
+          >>> del /1-1029028094.html
+
+          >>> del /1#issuecomment-1029028094
+
       ```
     - [ ] `code` 远程请求并嵌入代码
       ```
@@ -94,7 +99,7 @@ Github Ussues 支持：
     - [x] created
     - [x] edited
     - [x] deleted
-    - [x] `hide/unhide` 这个只提供了操作 minimize 的 api，但 api result 中没有任何信息，但是会触发 edited，通过请求网页来判断
+    - [x] `hide/unhide` github 只提供了操作 minimize 的 api，但所有 api result 中没有关于是否隐藏的信息，但是会触发 edited，只好通过请求网页来判断
   - event `issues`:
     - [x] opened
     - [x] edited
