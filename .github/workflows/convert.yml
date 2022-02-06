@@ -38,11 +38,12 @@ jobs:
       #     ref: 'gh-pages'
       #     path: 'gh-pages'
       - name: convert.js
+        id: convert
         uses: actions/github-script@v5
         with:
           script: |
             const script = require('./main/.github/workflows/convert.js').default;
-            await script({github, context, core})
+            return await script({github, context, core})
 
       # - name: commit
       #   run: |
@@ -52,3 +53,102 @@ jobs:
       #     git add _posts
       #     git commit -m "auto commit" || exit 0
       #     git push -u origin gh-pages
+
+      - name: debug
+        if: ${{ steps.convert.outputs.result != '' }}
+        run: |
+          echo "${{steps.convert.outputs.result}}"
+      - name: archive link
+        if: ${{ steps.convert.outputs.result != '' }}
+        id: archive_link
+        uses: actions/github-script@v5
+        with:
+          result-encoding: string
+          script: |
+            const archive = ${{ steps.convert.outputs.result }}
+            return archive.link || ''
+
+      - name: archive title
+        if: ${{ steps.archive_link.outputs.result != '' }}
+        id: archive_title
+        uses: actions/github-script@v5
+        with:
+          result-encoding: string
+          script: |
+            const archive = ${{ steps.convert.outputs.result }}
+            return archive.title || ''
+
+      - name: archive author
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+        id: archive_author
+        uses: actions/github-script@v5
+        with:
+          result-encoding: string
+          script: |
+            const archive = ${{ steps.convert.outputs.result }}
+            return archive.author
+
+      - name: archive
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+        run: |
+          mkdir archivebox
+          cd archivebox
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox init
+          # https://github.com/ArchiveBox/ArchiveBox/wiki/Configuration#timeout
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set TIMEOUT=1200
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox add "${{ steps.archive_link.outputs.result }}"
+          sudo find . -name singlefile.html
+          sudo chown -R $(find ../main -printf '%u:%g\n' | uniq) ./archive
+          sudo mv ./archive/*/singlefile.html ../
+
+      - name: debug
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+        run: |
+          ls -alh main
+          ls -alh archivebox
+          ls -alh archivebox/archive/*/
+          head singlefile.html
+
+      - name: add YAML front matter
+        id: format
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+        run: |
+          cat > temp.html << EOF
+          ---
+          layout: null
+          title: "[archive] ${{ steps.archive_title.outputs.result }}"
+          author: "${{ steps.archive_author.outputs.result }}"
+          ---
+
+          EOF
+
+          cat singlefile.html >> temp.html
+          # echo "::set-output name=result::$(cat temp.html | base64 -w 0)"
+
+      - name: commit
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const fs = require('fs')
+            const content = fs.readFileSync('./temp.html').toString('base64')
+            let rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}`
+            if (context.eventName === '') {
+              rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}#issuecomment-${context.payload.comment.id}`
+            }
+            const archive = ${{ steps.convert.outputs.result }}
+            const path = `_posts/archive/1970-01-01-${encodeURIComponent(archive.link)}.html`
+            const branch = 'gh-pages'
+            let status
+            let sha = ''
+            const data = await github.rest.repos.createOrUpdateFileContents({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              branch: branch,
+              path: path,
+              message: `add ${path} via github-actions${'\n\n'}${archive.title}${'\n'}${rawLink}`,
+              content: content,
+              sha: sha
+            })
+            console.log("data",typeof(data),data)
+  

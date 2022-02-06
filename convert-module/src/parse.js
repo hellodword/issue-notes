@@ -157,6 +157,25 @@ async function myRemarkPlugin (tree, result) {
                   }
                 }
               })
+              .command({
+                command: 'archive [link]',
+                desc: 'web archiving with archivebox',
+                builder: yargs => yargs.options({
+                  title: {
+                    description: '标题'
+                  },
+                  author: {
+                    description: '作者'
+                  }
+                }),
+                handler: (args) => {
+                  result.archive = {
+                    node: node,
+                    args: args,
+                    children: textNode.children
+                  }
+                }
+              })
               .parse()
           }
         }

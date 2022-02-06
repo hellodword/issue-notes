@@ -66,7 +66,7 @@ Github Issues 支持：
       ```
       >>> jump [LINK]
       ```
-    - [x] `del` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了无法再触发
+    - [x] `del` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了无法再触发，archive 的就不支持了，手动删除吧
       ```
       >>> del [LINK]
 
@@ -87,13 +87,17 @@ Github Issues 支持：
                 --lang   Identifier to enable syntax highlighting
                 --name   <name> File name
 
-          >>> code --lang js --name test.js https://test.com/test.js
+          >>> code https://test.com/test.js
       ```
-    - [ ] `archive` 可以对文章进行 archive
+    - [x] `archive` 可以对文章进行 archive
       ```
       >>> archive [LINK]
 
-          >>> archive https://tailscale.com/blog/how-nat-traversal-works/
+          Options:
+                --title  <title>  标题
+                --author <author> 作者
+
+          >>> archive --title "How NAT traversal works" --author "David Anderson" https://tailscale.com/blog/how-nat-traversal-works/
       ```
   - event `issue_comment`:
     - [x] created

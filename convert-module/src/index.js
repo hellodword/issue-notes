@@ -124,6 +124,11 @@ async function createPost (github, context,
     return
   }
 
+  // 留待 actions 进行 archive
+  if (result.archive) {
+    return result.archive.args
+  }
+
   if (rawTitle && rawTitle !== '') {
     result.title = rawTitle
   }
@@ -236,23 +241,20 @@ export default async function entry ({
 
       switch (context.payload.action) {
         case 'opened': {
-          await createPost(github, context,
+          return await createPost(github, context,
             issueId, issueCommentId,
             filenamePrefix, date,
             rawTitle, rawBody, rawLink)
-          break
         }
         case 'edited': {
-          await createPost(github, context,
+          return await createPost(github, context,
             issueId, issueCommentId,
             filenamePrefix, date,
             rawTitle, rawBody, rawLink)
-          break
         }
         case 'deleted': {
-          await deletePost(github, context,
+          return await deletePost(github, context,
             issueId, issueCommentId)
-          break
         }
         case 'transferred': {
           console.log('Unsupported yet')
@@ -271,11 +273,10 @@ export default async function entry ({
           break
         }
         case 'reopened': {
-          await createPost(github, context,
+          return await createPost(github, context,
             issueId, issueCommentId,
             filenamePrefix, date,
             rawTitle, rawBody, rawLink)
-          break
         }
         case 'assigned': {
           console.log('Unsupported yet')
@@ -336,11 +337,10 @@ export default async function entry ({
 
       switch (context.payload.action) {
         case 'created': {
-          await createPost(github, context,
+          return await createPost(github, context,
             issueId, issueCommentId,
             filenamePrefix, date,
             rawTitle, rawBody, rawLink)
-          break
         }
         case 'edited': {
           let minimized = false
@@ -366,17 +366,15 @@ export default async function entry ({
               console.log(error)
             }
           }
-          await createPost(github, context,
+          return await createPost(github, context,
             issueId, issueCommentId,
             filenamePrefix, date,
             rawTitle, rawBody, rawLink,
             minimized)
-          break
         }
         case 'deleted': {
-          await deletePost(github, context,
+          return await deletePost(github, context,
             issueId, issueCommentId)
-          break
         }
         default: {
           console.log('unkown event action:', context.eventName, context.payload.action)
