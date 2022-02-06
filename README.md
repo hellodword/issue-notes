@@ -66,7 +66,7 @@ Github Issues 支持：
       ```
       >>> jump [LINK]
       ```
-    - [x] `del` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了
+    - [x] `del` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了无法再触发
       ```
       >>> del [LINK]
 
