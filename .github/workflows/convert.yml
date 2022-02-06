@@ -126,21 +126,50 @@ jobs:
         run: |
           head index.html
 
-      - name: add YAML front matter
-        id: format
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
-        run: |
-          cat > temp.html << EOF
-          ---
-          layout: null
-          title: "[archive] ${{ steps.archive_title.outputs.result }}"
-          author: "${{ steps.archive_author.outputs.result }}"
-          ---
+      # - name: add YAML front matter
+      #   id: format
+      #   if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+      #   run: |
+      #     cat > temp.html << EOF
+      #     ---
+      #     layout: null
+      #     title: "[archive] ${{ steps.archive_title.outputs.result }}"
+      #     author: "${{ steps.archive_author.outputs.result }}"
+      #     ---
 
-          EOF
+      #     {{ "
+      #     EOF
 
-          cat index.html >> temp.html
-          # echo "::set-output name=result::$(cat temp.html | base64 -w 0)"
+      #     # 防止 html 里有字符被识别为 liquid
+
+      #     # node: Argument list too long
+      #     # https://gist.github.com/cdown/1163649?permalink_comment_id=2753653#gistcomment-2753653
+      #     # alias urlencode='node --eval "console.log(encodeURIComponent(process.argv[1]))"'
+      #     # urlencode "$(cat index.html)" >> temp.html
+
+      #     # too slow
+      #     # rawurlencode() {
+      #     #   local string="${1}"
+      #     #   local strlen=${#string}
+      #     #   local encoded=""
+      #     #   local pos c o
+
+      #     #   for (( pos=0 ; pos<strlen ; pos++ )); do
+      #     #     c=${string:$pos:1}
+      #     #     case "$c" in
+      #     #         [-_.~a-zA-Z0-9] ) o="${c}" ;;
+      #     #         * )               printf -v o '%%%02x' "'$c"
+      #     #     esac
+      #     #     encoded+="${o}"
+      #     #   done
+      #     #   echo "${encoded}"    # You can either set a return variable (FASTER) 
+      #     #   REPLY="${encoded}"   #+or echo the result (EASIER)... or both... :p
+      #     # }
+      #     # rawurlencode "$(cat index.html)" >> temp.html
+
+      #     echo '" | url_decode }}' >> temp.html
+      #     # echo "::set-output name=result::$(cat temp.html | base64 -w 0)"
+
 
       - name: commit
         if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
@@ -149,8 +178,13 @@ jobs:
           script: |
             const archive = ${{ steps.convert.outputs.result }}
 
-            const fs = require('fs')
-            const content = fs.readFileSync('./temp.html').toString('base64')
+            const content = `---
+            layout: null
+            title: "[archive] ${archive.title}"
+            author: "${archive.author}"
+            ---
+            {{ "${encodeURIComponent(require('fs').readFileSync('./index.html').toString())}" | url_decode }}
+            `
 
             let rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}`
             if (context.eventName === 'issue_comment') {
@@ -189,7 +223,7 @@ jobs:
               branch: branch,
               path: path,
               message: `add archive ${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${rawLink}`,
-              content: content,
+              content: Buffer.from(content, 'utf8').toString('base64'),
               sha: sha
             })
             console.log("data",typeof(data),data)
