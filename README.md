@@ -89,13 +89,16 @@ Github Issues 支持：
 
           >>> code https://test.com/test.js
       ```
-    - [x] `archive` 可以对文章进行 archive
+    - [x] `archive` 可以对文章进行 archive，利用一些 web archiving 工具
+      > [https://github.com/iipc/awesome-web-archiving](https://github.com/iipc/awesome-web-archiving)
       ```
       >>> archive [LINK]
 
           Options:
                 --title  <title>  标题
                 --author <author> 作者
+                --date   <date>   日期
+                --engine <engine> web archiving 引擎，可选 archivebox,cairn
 
           >>> archive --title "How NAT traversal works" --author "David Anderson" https://tailscale.com/blog/how-nat-traversal-works/
       ```

@@ -24697,6 +24697,12 @@ async function myRemarkPlugin (tree, result) {
                   },
                   author: {
                     description: '作者'
+                  },
+                  engine: {
+                    description: '引擎'
+                  },
+                  date: {
+                    description: 'date'
                   }
                 }),
                 handler: (args) => {

@@ -43,7 +43,8 @@ yarn.lock
 others
 .DS_Store
 
-dist
 !dist/index.js
+dist/locales
+# dist
 
 example

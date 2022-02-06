@@ -42,7 +42,7 @@ jobs:
         uses: actions/github-script@v5
         with:
           script: |
-            const script = require('./main/.github/workflows/convert.js').default;
+            const script = require('./main/convert-module/dist/index.js').default;
             return await script({github, context, core})
 
       # - name: commit
@@ -78,6 +78,16 @@ jobs:
             const archive = ${{ steps.convert.outputs.result }}
             return archive.title || ''
 
+      - name: archive engine
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+        id: archive_engine
+        uses: actions/github-script@v5
+        with:
+          result-encoding: string
+          script: |
+            const archive = ${{ steps.convert.outputs.result }}
+            return archive.engine || 'archivebox'
+
       - name: archive author
         if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
         id: archive_author
@@ -88,8 +98,8 @@ jobs:
             const archive = ${{ steps.convert.outputs.result }}
             return archive.author
 
-      - name: archive
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+      - name: archivebox
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'archivebox' }}
         run: |
           mkdir archivebox
           cd archivebox
@@ -99,15 +109,22 @@ jobs:
           docker run --rm -i -v `pwd`:/data archivebox/archivebox add "${{ steps.archive_link.outputs.result }}"
           sudo find . -name singlefile.html
           sudo chown -R $(find ../main -printf '%u:%g\n' | uniq) ./archive
-          sudo mv ./archive/*/singlefile.html ../
+          sudo mv ./archive/*/singlefile.html ../index.html
+
+      # 对微信公众号效果比目前的 archivebox 好，大概是因为作者是中文用户吧。
+      - name: cairn
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'cairn' }}
+        run: |
+          mkdir cairn
+          cd cairn
+          sudo npm install -g @wabarc/cairn
+          cairn -o . -t 1200 "${{ steps.archive_link.outputs.result }}"
+          sudo mv *.html ../index.html
 
       - name: debug
         if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
         run: |
-          ls -alh main
-          ls -alh archivebox
-          ls -alh archivebox/archive/*/
-          head singlefile.html
+          head index.html
 
       - name: add YAML front matter
         id: format
@@ -122,7 +139,7 @@ jobs:
 
           EOF
 
-          cat singlefile.html >> temp.html
+          cat index.html >> temp.html
           # echo "::set-output name=result::$(cat temp.html | base64 -w 0)"
 
       - name: commit
@@ -130,15 +147,40 @@ jobs:
         uses: actions/github-script@v5
         with:
           script: |
+            const archive = ${{ steps.convert.outputs.result }}
+
             const fs = require('fs')
             const content = fs.readFileSync('./temp.html').toString('base64')
+
             let rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}`
-            if (context.eventName === '') {
+            if (context.eventName === 'issue_comment') {
               rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}#issuecomment-${context.payload.comment.id}`
             }
-            const archive = ${{ steps.convert.outputs.result }}
-            const path = `_posts/archive/1970-01-01-${encodeURIComponent(archive.link)}.html`
+
+            let date = archive.date
+            if (!date || date === '') {
+              if (context.eventName === 'issue_comment') {
+                date = context.payload.issue.updated_at || context.payload.issue.created_at
+              } else {
+                date = context.payload.comment.updated_at || context.payload.comment.created_at
+              }
+              if (date) {
+                date = date.slice(0,10)
+                const regex = /^\d{4}-\d{2}-\d{2}/
+                if (!regex.test(date)) {
+                  date = undefined
+                }
+              }
+            }
+
+            if (!date || date === '') {
+              date = '1970-01-01'
+            }
+
+            const filename = `${date}-${archive.title}`
+            const path = `_posts/archive/${filename}.html`
             const branch = 'gh-pages'
+
             let status
             let sha = ''
             const data = await github.rest.repos.createOrUpdateFileContents({
@@ -146,7 +188,7 @@ jobs:
               repo: context.repo.repo,
               branch: branch,
               path: path,
-              message: `add ${path} via github-actions${'\n\n'}${archive.title}${'\n'}${rawLink}`,
+              message: `add archive ${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${rawLink}`,
               content: content,
               sha: sha
             })
