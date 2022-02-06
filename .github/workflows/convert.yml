@@ -111,7 +111,7 @@ jobs:
           sudo chown -R $(find ../main -printf '%u:%g\n' | uniq) ./archive
           sudo mv ./archive/*/singlefile.html ../index.html
 
-      # 对微信公众号效果比目前的 archivebox 好，大概是因为作者是中文用户吧。
+      # 对微信公众号效果比目前的 archivebox 好，但是对别的 bug 就多
       - name: cairn
         if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'cairn' }}
         run: |
@@ -119,6 +119,25 @@ jobs:
           cd cairn
           sudo npm install -g @wabarc/cairn
           cairn -o . -t 1200 "${{ steps.archive_link.outputs.result }}"
+          ls -alh
+          sudo mv *.html ../index.html
+
+      - uses: actions/setup-go@v2
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'obelisk' }}
+        with:
+          go-version: '1.17.6'
+      - name: obelisk
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'obelisk' }}
+        run: |
+          mkdir obelisk
+          cd obelisk
+          go get -u -v github.com/go-shiori/obelisk/cmd/obelisk
+          obelisk "${{ steps.archive_link.outputs.result }}"
+          ls -alh
+          for f in *.htm; do 
+              mv -- "$f" "${f%.htm}.html"
+          done
+          ls -alh
           sudo mv *.html ../index.html
 
       - name: debug
@@ -181,7 +200,7 @@ jobs:
             const content = `---
             layout: null
             title: "[archive] ${archive.title}"
-            author: "${archive.author}"
+            author: "${archive.author || '${{ steps.archive_engine.outputs.result }}'}"
             ---
             {{ "${encodeURIComponent(require('fs').readFileSync('./index.html').toString())}" | url_decode }}
             `

@@ -40,88 +40,84 @@ Github Issues 支持：
 搞不懂这些浏览器缓存，干脆把什么 `Cache-Control: no-cache` 和 `Math.random()` 都加上，自用不是很在意这些性能。
 
 
+## inline commands
+> 设计了一些 inline commands，选用了 markdown 里的三层 quote 作为标识，而不是容易影响 markdown 格式的 jekyll 的 YAML front matter。刚好 github-actions 这个 app对 issues 进行的操作是不会触发 Github Actions 的，可以用于编译修改包含 inline commands 的 issue/comment。
+- [x] `author` 对应 jekyll YAML front matter 的 author
+  ```
+  >>> author [AUTHOR]
+  ```
+- [x] `desc` 对应 jekyll YAML front matter 的 description
+  ```
+  >>> desc [line1]
+           [line2]
+           [line3]
+      >>> desc `hello dword` `hi`
+              line2
+              "line 3"
+  ```
+- [x] `img` 远程请求并插入图片
+  ```
+  >>> img [LINK]
+  ```
+- [x] `jump` 首页不跳转到 jekyll post 链接
+  ```
+  >>> jump [LINK]
+  ```
+- [x] `del` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了无法再触发，archive 的就不支持了，手动删除吧
+  ```
+  >>> del [LINK]
+      >>> del https://hellodword.github.io/issue-notes/2022/02/03/1-1029028094.html
+      >>> del https://github.com/hellodword/issue-notes/issues/1#issuecomment-1029028094
+      >>> del /1-1029028094.html
+      >>> del /1#issuecomment-1029028094
+  ```
+- [x] `code` 远程请求并嵌入代码
+  ```
+  >>> code [OPTIONS] [LINK]
+      Options:
+            --lang   Identifier to enable syntax highlighting
+            --name   <name> File name
+      >>> code https://test.com/test.js
+  ```
+- [x] `archive` 可以对文章进行 archive，利用一些 web archiving 工具
+  > [https://github.com/iipc/awesome-web-archiving](https://github.com/iipc/awesome-web-archiving)
+  ```
+  >>> archive [LINK]
+      Options:
+            --title  <title>  标题
+            --author <author> 作者
+            --date   <date>   日期
+            --engine <engine> web archiving 引擎，可选 archivebox,cairn,obelisk
+      >>> archive --title "How NAT traversal works" --author "David Anderson" https://tailscale.com/blog/how-nat-traversal-works/
+  ```
+
+## Events
+- `issue_comment`:
+  - [x] created
+  - [x] edited
+  - [x] deleted
+  - [x] `hide/unhide` github 只提供了操作 minimize 的 api，但所有 api result 中没有关于是否隐藏的信息，但是会触发 edited，只好通过请求网页来判断
+- `issues`:
+  - [x] opened
+  - [x] edited
+  - [x] deleted
+  - [ ] transferred
+  - [ ] pinned
+  - [ ] unpinned
+  - [ ] closed
+  - [x] reopened
+  - [ ] assigned
+  - [ ] unassigned
+  - [ ] labeled
+  - [ ] unlabeled
+  - [ ] locked
+  - [ ] unlocked
+  - [ ] milestoned
+  - [ ] demilestoned
+
 ## TODO
 
-  - inline commands
-    > 设计了一些 inline commands，选用了 markdown 里的三层 quote 作为标识，而不是容易影响 markdown 格式的 jekyll 的 YAML front matter。刚好 github-actions 这个 app 对 issues 进行的操作是不会触发 Github Actions 的，可以用于编译修改包含 inline commands 的 issue/comment。
-    - [x] `author` 对应 jekyll YAML front matter 的 author
-      ```
-      >>> author [AUTHOR]
-      ```
-    - [x] `desc` 对应 jekyll YAML front matter 的 description
-      ```
-      >>> desc [line1]
-               [line2]
-               [line3]
-
-          >>> desc `hello dword` `hi`
-                  line2
-                  "line 3"
-      ```
-    - [x] `img` 远程请求并插入图片
-      ```
-      >>> img [LINK]
-      ```
-    - [x] `jump` 首页不跳转到 jekyll post 链接
-      ```
-      >>> jump [LINK]
-      ```
-    - [x] `del` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了无法再触发，archive 的就不支持了，手动删除吧
-      ```
-      >>> del [LINK]
-
-          >>> del https://hellodword.github.io/issue-notes/2022/02/03/1-1029028094.html
-
-          >>> del https://github.com/hellodword/issue-notes/issues/1#issuecomment-1029028094
-
-          >>> del /1-1029028094.html
-
-          >>> del /1#issuecomment-1029028094
-
-      ```
-    - [x] `code` 远程请求并嵌入代码
-      ```
-      >>> code [OPTIONS] [LINK]
-
-          Options:
-                --lang   Identifier to enable syntax highlighting
-                --name   <name> File name
-
-          >>> code https://test.com/test.js
-      ```
-    - [x] `archive` 可以对文章进行 archive，利用一些 web archiving 工具
-      > [https://github.com/iipc/awesome-web-archiving](https://github.com/iipc/awesome-web-archiving)
-      ```
-      >>> archive [LINK]
-
-          Options:
-                --title  <title>  标题
-                --author <author> 作者
-                --date   <date>   日期
-                --engine <engine> web archiving 引擎，可选 archivebox,cairn
-
-          >>> archive --title "How NAT traversal works" --author "David Anderson" https://tailscale.com/blog/how-nat-traversal-works/
-      ```
-  - event `issue_comment`:
-    - [x] created
-    - [x] edited
-    - [x] deleted
-    - [x] `hide/unhide` github 只提供了操作 minimize 的 api，但所有 api result 中没有关于是否隐藏的信息，但是会触发 edited，只好通过请求网页来判断
-  - event `issues`:
-    - [x] opened
-    - [x] edited
-    - [x] deleted
-    - [ ] transferred
-    - [ ] pinned
-    - [ ] unpinned
-    - [ ] closed
-    - [x] reopened
-    - [ ] assigned
-    - [ ] unassigned
-    - [ ] labeled
-    - [ ] unlabeled
-    - [ ] locked
-    - [ ] unlocked
-    - [ ] milestoned
-    - [ ] demilestoned
-
+- [ ] archive 同时使用多个引擎，并且展示在首页的同一条
+- [ ] 解析 title/description/author/date，最终实现一条链接自动完事
+- [ ] 储存 code link 对应的文件，以规避 IssueComment 的 65536 characters 上限
+- [ ] 确保 _posts 中的文件进行了 url encode，从而不会被误识别 liquid
