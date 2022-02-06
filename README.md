@@ -79,15 +79,15 @@ Github Issues 支持：
           >>> del /1#issuecomment-1029028094
 
       ```
-    - [ ] `code` 远程请求并嵌入代码
+    - [x] `code` 远程请求并嵌入代码
       ```
       >>> code [OPTIONS] [LINK]
 
           Options:
                 --lang   Identifier to enable syntax highlighting
-                --file   <name> File name
+                --name   <name> File name
 
-          >>> code --lang js --file test.js https://test.com/test.js
+          >>> code --lang js --name test.js https://test.com/test.js
       ```
     - [ ] `archive` 可以对文章进行 archive
       ```
