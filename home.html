@@ -115,9 +115,6 @@ layout: null
             <p>
                 <span v-text="item.description"></span>
             </p>
-            <!-- <p>
-            <div v-html="item.content"></div>
-            </p> -->
             <p>
                 <i v-text="item.author"></i>
                 |
@@ -178,15 +175,6 @@ layout: null
                                             ;
                                     }
 
-                                    if (data.pages[i].description && data.pages[i].description !== '') {
-                                        data.pages[i].content = '';
-                                    } else if (data.pages[i].content) {
-                                        data.pages[i].content = decodeURIComponent(data.pages[i].content)
-                                            .replace(/\+/g, " ")
-                                            .replace(/\r/g, " ")
-                                            ;
-                                        // data.pages[i].content = marked.parse(data.pages[i].content);
-                                    }
 
                                     this.list.push(data.pages[i]);
                                 }

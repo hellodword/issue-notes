@@ -11,7 +11,6 @@ layout: null
       {
   {% if post.date %}      "updated": "{{ post.date | date: "%Y-%m-%d %H:%M:%S" }}",{% endif %}
   {% if post.description %}      "description": "{{ post.description | url_encode }}",{% endif %}
-        "content": "{{ post.content | url_encode }}",
         "author": "{% if post.author %}{{ post.author }}{% else %}Notes{% endif %}",
         "title": "{{ post.title | url_encode }}",
         "url": "{% if post.jumplink %}{{ post.jumplink }}{% else %}{{ post.url | relative_url }}{% endif %}"
