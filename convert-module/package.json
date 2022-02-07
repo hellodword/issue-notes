@@ -3,10 +3,9 @@
     "private": true,
     "scripts": {
         "lint": "eslint src",
-        "lint:helper": "eslint src/helper.js",
-        "build": "ncc build src/index.js -o dist",
-        "build:parse": "ncc build src/parse.js -o dist",
-        "build:helper": "ncc build src/helper.js -o dist"
+        "build": "ncc build --target es2015 src -o dist",
+        "build:parse": "ncc build --target es2015 src/parse.js -o dist",
+        "build:helper": "ncc build --target es2015 src/helper.js -o dist"
     },
     "dependencies": {
         "content-disposition": "^0.5.4",

@@ -9842,7 +9842,11 @@ __nccwpck_require__.r(__webpack_exports__);
 
 // EXPORTS
 __nccwpck_require__.d(__webpack_exports__, {
-  "default": () => (/* binding */ entry)
+  "dateFormat": () => (/* reexport */ dateFormat),
+  "entry": () => (/* binding */ entry),
+  "getContentSha": () => (/* reexport */ getContentSha),
+  "getPromise": () => (/* reexport */ getPromise),
+  "parseMarkdown": () => (/* reexport */ parseMarkdown)
 });
 
 // NAMESPACE OBJECT: ./node_modules/micromark/lib/constructs.js
@@ -24900,7 +24904,40 @@ async function parseMarkdown (github, context, filenamePrefix, rawLink, markdown
   return result
 }
 
+;// CONCATENATED MODULE: ./src/octokit.js
+async function getContentSha (github, context, ref, path, cb) {
+  try {
+    const response = await github.rest.repos.getContent({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      ref: ref,
+      path: path
+    })
+    if (response.data && response.data.length > 0) {
+      for (let i = 0; i < response.data.length; i++) {
+        if (response.data[i].name && cb(response.data[i].name)) {
+          return { sha: response.data[i].sha, name: response.data[i].name }
+        }
+      }
+    } else if (response.data && response.data.sha) {
+      return { sha: response.data.sha, name: response.data.name }
+    }
+    return { sha: '' }
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return { sha: '' }
+    }
+    throw error
+  }
+}
+
 ;// CONCATENATED MODULE: ./src/index.js
+
+
+
+
+
+
 
 
 
@@ -24939,47 +24976,27 @@ ${body}
 async function deletePost (github, context,
   issueId, issueCommentId) {
   const branch = 'gh-pages'
-  let status
-  let sha = ''
-  let name = ''
+  const dir = '_posts'
 
-  // 404 不存在
-  // 200 存在
-  status = 0
-  try {
-    const response = await github.rest.repos.getContent({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      ref: branch,
-      path: '_posts'
+  const { sha, name } = await getContentSha(github, context,
+    branch, dir,
+    (item) => {
+      return item.indexOf(`-${issueId}-${issueCommentId}.md`) !== -1
     })
-    if (response.data && response.data.length > 0) {
-      for (let i = 0; i < response.data.length; i++) {
-        if (response.data[i].name && response.data[i].name.indexOf(`-${issueId}-${issueCommentId}.md`) !== -1) {
-          sha = response.data[i].sha
-          name = response.data[i].name
-          break
-        }
-      }
-      console.log('sha', sha)
-      if (!sha || sha === '' || !name || name === '') {
-        return
-      }
-    }
-  } catch (error) {
-    console.log(error)
+
+  if (!sha || sha === '' || !name || name === '') {
     return
   }
 
   // 201 上传成功
   // 200 更新成功
-  status = 0
+  let status = 0
   try {
     const response = await github.rest.repos.deleteFile({
       owner: context.repo.owner,
       repo: context.repo.repo,
       branch: branch,
-      path: `_posts/${name}`,
+      path: `${dir}/${name}`,
       message: `delete ${name} via github-actions`,
       sha: sha
     })
@@ -25044,28 +25061,13 @@ async function createPost (github, context,
 
   const path = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`
   const branch = 'gh-pages'
-  let status
-  let sha = ''
 
-  // 404 不存在
-  // 200 存在
-  status = 0
-  try {
-    const response = await github.rest.repos.getContent({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      ref: branch,
-      path: path
-    })
-    sha = response.data.sha
-    console.log('sha', sha)
-  } catch (error) {
-    console.log('getContent', error)
-  }
+  const { sha } = await getContentSha(github, context,
+    branch, path)
 
   // 201 上传成功
   // 200 更新成功
-  status = 0
+  let status = 0
   try {
     const response = await github.rest.repos.createOrUpdateFileContents({
       owner: context.repo.owner,

@@ -42,8 +42,8 @@ jobs:
         uses: actions/github-script@v5
         with:
           script: |
-            const script = require('./main/convert-module/dist/index.js').default;
-            return await script({github, context, core})
+            const script = require('./main/convert-module/dist/index.js');
+            return await script.entry({github, context, core})
 
       # - name: commit
       #   run: |
@@ -215,6 +215,7 @@ jobs:
         uses: actions/github-script@v5
         with:
           script: |
+            const script = require('./main/convert-module/dist/index.js');
             const archive = ${{ steps.convert.outputs.result }}
 
             const content = `---
@@ -237,25 +238,19 @@ jobs:
               } else {
                 date = context.payload.comment.updated_at || context.payload.comment.created_at
               }
-              if (date) {
-                date = date.slice(0,10)
-                const regex = /^\d{4}-\d{2}-\d{2}/
-                if (!regex.test(date)) {
-                  date = undefined
-                }
-              }
-            }
-
-            if (!date || date === '') {
-              date = '1970-01-01'
+              date = script.dateFormat(new Date(date))
             }
 
             const filename = `${date}-${archive.title}`
             const path = `_posts/archive/${filename}.html`
             const branch = 'gh-pages'
 
-            let status
-            let sha = ''
+            const { sha } = await script.getContentSha(github, context,
+              branch, '_posts/archive',
+              (item) => {
+                return item.indexOf(`-${archive.title}.html`) !== -1
+              })
+
             const data = await github.rest.repos.createOrUpdateFileContents({
               owner: context.repo.owner,
               repo: context.repo.repo,
