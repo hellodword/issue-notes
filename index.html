@@ -6,20 +6,45 @@ layout: null
 
 
 {
-    "pages": [{% for post in paginator.posts %}
-      {% if forloop.first != true %},{% endif %}
-      {
-  {% if post.date %}      "updated": "{{ post.date | date: "%Y-%m-%d %H:%M:%S" }}",{% endif %}
-  {% if post.description %}      "description": "{{ post.description | url_encode }}",{% endif %}
-        "author": "{% if post.author %}{{ post.author }}{% else %}Notes{% endif %}",
-        "title": "{{ post.title | url_encode }}",
-        "url": "{% if post.jumplink %}{{ post.jumplink }}{% else %}{{ post.url | relative_url }}{% endif %}"
-      }{% endfor %}
-    ]
+    "pages":
+      [
+      {% for post in paginator.posts %}{% if forloop.first != true %},{% endif %}
+        {
+          "archives":
+            [
+            {% for archive in post.archives %}{% if forloop.first != true %},{% endif %}
+              {
+                "name" : "{{ archive.name }}",
+                "url" : "{{ archive.url | relative_url }}"
+              }
+            {% endfor %}
+            ],
+
+          {% if post.date %}
+          "updated": "{{ post.date | date: "%Y-%m-%d %H:%M:%S" }}",
+          {% endif %}
+
+          {% if post.description %}
+          "description": "{{ post.description | url_encode }}",
+          {% endif %}
+
+          "author": "{% if post.author %}{{ post.author }}{% else %}Notes{% endif %}",
+          "title": "{{ post.title | url_encode }}",
+
+          {% if post.jumplink %}
+          "url": "{{ post.jumplink }}"
+          {% else %}
+          "url": "{{ post.url | relative_url }}"
+          {% endif %}
+        }
+      {% endfor %}
+      ]
+
     {% if paginator.next_page %}
     ,"next": "{{ paginator.next_page_path | relative_url }}"
     {% endif %}
+
     {% if paginator.previous_page %}
     ,"prev": "{{ paginator.previous_page_path | relative_url }}"
     {% endif %}
-  }
+}

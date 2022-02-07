@@ -115,6 +115,10 @@ layout: null
             <p>
                 <span v-text="item.description"></span>
             </p>
+            
+            <div>
+                <a target="_blank" v-for="archive in item.archives" :href="archive.url" v-text="archive.name" style="margin-right: 10px;word-break:break-all;font-size: 17px;"></a>
+            </div>
             <p>
                 <i v-text="item.author"></i>
                 |

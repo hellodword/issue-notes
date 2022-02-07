@@ -31,28 +31,14 @@ jobs:
           fetch-depth: 0
           ref: 'main'
           path: 'main'
-      # - name: Checkout
-      #   uses: actions/checkout@v2
-      #   with:
-      #     fetch-depth: 0
-      #     ref: 'gh-pages'
-      #     path: 'gh-pages'
+
       - name: convert.js
         id: convert
         uses: actions/github-script@v5
         with:
           script: |
             const script = require('./main/convert-module/dist/index.js');
-            return await script.entry({github, context, core})
-
-      # - name: commit
-      #   run: |
-      #     cd gh-pages
-      #     git config user.name github-actions[bot]
-      #     git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-      #     git add _posts
-      #     git commit -m "auto commit" || exit 0
-      #     git push -u origin gh-pages
+            return await script.convertEntry({github, context, core})
 
       - name: debug
         if: ${{ steps.convert.outputs.result != '' }}
@@ -86,7 +72,7 @@ jobs:
           result-encoding: string
           script: |
             const archive = ${{ steps.convert.outputs.result }}
-            return archive.engine || 'archivebox'
+            return archive.engine ? archive.engine.join(',') : 'archivebox'
 
       - name: archive author
         if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
@@ -98,40 +84,43 @@ jobs:
             const archive = ${{ steps.convert.outputs.result }}
             return archive.author
 
+      # archivebox
       - name: archivebox
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'archivebox' }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'archivebox') }}
         run: |
-          mkdir archivebox
-          cd archivebox
+          mkdir -p archive/archivebox
+          cd archive/archivebox
           docker run --rm -i -v `pwd`:/data archivebox/archivebox init
           # https://github.com/ArchiveBox/ArchiveBox/wiki/Configuration#timeout
           docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set TIMEOUT=1200
           docker run --rm -i -v `pwd`:/data archivebox/archivebox add "${{ steps.archive_link.outputs.result }}"
           sudo find . -name singlefile.html
           sudo chown -R $(find ../main -printf '%u:%g\n' | uniq) ./archive
-          sudo mv ./archive/*/singlefile.html ../index.html
+          sudo mv ./archive/*/singlefile.html temp.html
+          sudo mv temp.html index.html
 
       # 对微信公众号效果比目前的 archivebox 好，但是对别的 bug 就多
       - name: cairn
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'cairn' }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'cairn') }}
         run: |
-          mkdir cairn
-          cd cairn
+          mkdir -p archive/cairn
+          cd archive/cairn
           sudo npm install -g @wabarc/cairn
           cairn -o . -t 1200 "${{ steps.archive_link.outputs.result }}"
           ls -alh
-          sudo mv *.html ../index.html
+          sudo mv *.html temp.html
+          sudo mv temp.html index.html
 
       # obelisk 年久失修，rivet 这个 fork 不错
       - uses: actions/setup-go@v2
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'obelisk' }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'obelisk') }}
         with:
           go-version: '1.17.6'
       - name: obelisk
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'obelisk' }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'obelisk') }}
         run: |
-          mkdir obelisk
-          cd obelisk
+          mkdir -p archive/obelisk
+          cd archive/obelisk
           go install github.com/go-shiori/obelisk/cmd/obelisk
           obelisk "${{ steps.archive_link.outputs.result }}"
           ls -alh
@@ -139,18 +128,19 @@ jobs:
               mv -- "$f" "${f%.htm}.html"
           done
           ls -alh
-          sudo mv *.html ../index.html
+          sudo mv *.html temp.html
+          sudo mv temp.html index.html
 
       # rivet
       - uses: actions/setup-go@v2
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'rivet' }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'rivet') }}
         with:
           go-version: '1.17.6'
       - name: rivet
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'rivet' }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'rivet') }}
         run: |
-          mkdir rivet
-          cd rivet
+          mkdir -p archive/rivet
+          cd archive/rivet
           # go install github.com/wabarc/rivet/cmd/rivet@main
           git clone --depth 1 -b patch-4 https://github.com/hellodword/rivet source
           (cd source && go build -o ../rivet_bin ./cmd/rivet)
@@ -158,107 +148,14 @@ jobs:
 
           rivet -m archive "${{ steps.archive_link.outputs.result }}"
           ls -alh
-          sudo mv *.html ../index.html
-
-      - name: debug
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
-        run: |
-          head index.html
-
-      # - name: add YAML front matter
-      #   id: format
-      #   if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
-      #   run: |
-      #     cat > temp.html << EOF
-      #     ---
-      #     layout: null
-      #     title: "[archive] ${{ steps.archive_title.outputs.result }}"
-      #     author: "${{ steps.archive_author.outputs.result }}"
-      #     ---
-
-      #     {{ "
-      #     EOF
-
-      #     # 防止 html 里有字符被识别为 liquid
-
-      #     # node: Argument list too long
-      #     # https://gist.github.com/cdown/1163649?permalink_comment_id=2753653#gistcomment-2753653
-      #     # alias urlencode='node --eval "console.log(encodeURIComponent(process.argv[1]))"'
-      #     # urlencode "$(cat index.html)" >> temp.html
-
-      #     # too slow
-      #     # rawurlencode() {
-      #     #   local string="${1}"
-      #     #   local strlen=${#string}
-      #     #   local encoded=""
-      #     #   local pos c o
-
-      #     #   for (( pos=0 ; pos<strlen ; pos++ )); do
-      #     #     c=${string:$pos:1}
-      #     #     case "$c" in
-      #     #         [-_.~a-zA-Z0-9] ) o="${c}" ;;
-      #     #         * )               printf -v o '%%%02x' "'$c"
-      #     #     esac
-      #     #     encoded+="${o}"
-      #     #   done
-      #     #   echo "${encoded}"    # You can either set a return variable (FASTER) 
-      #     #   REPLY="${encoded}"   #+or echo the result (EASIER)... or both... :p
-      #     # }
-      #     # rawurlencode "$(cat index.html)" >> temp.html
-
-      #     echo '" | url_decode }}' >> temp.html
-      #     # echo "::set-output name=result::$(cat temp.html | base64 -w 0)"
-
+          sudo mv *.html temp.html
+          sudo mv temp.html index.html
 
       - name: commit
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+        if: ${{ steps.archive_engine.outputs.result != '' }}
         uses: actions/github-script@v5
         with:
           script: |
-            const script = require('./main/convert-module/dist/index.js');
+            const script = require('./main/convert-module/dist/index.js')
             const archive = ${{ steps.convert.outputs.result }}
-
-            const content = `---
-            layout: null
-            title: "[archive] ${archive.title}"
-            author: "${archive.author || '${{ steps.archive_engine.outputs.result }}'}"
-            ---
-            {{ "${encodeURIComponent(require('fs').readFileSync('./index.html').toString())}" | url_decode }}
-            `
-
-            let rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}`
-            if (context.eventName === 'issue_comment') {
-              rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}#issuecomment-${context.payload.comment.id}`
-            }
-
-            let date = archive.date
-            if (!date || date === '') {
-              if (context.eventName === 'issue_comment') {
-                date = context.payload.issue.updated_at || context.payload.issue.created_at
-              } else {
-                date = context.payload.comment.updated_at || context.payload.comment.created_at
-              }
-              date = script.dateFormat(new Date(date))
-            }
-
-            const filename = `${date}-${archive.title}`
-            const path = `_posts/archive/${filename}.html`
-            const branch = 'gh-pages'
-
-            const { sha } = await script.getContentSha(github, context,
-              branch, '_posts/archive',
-              (item) => {
-                return item.indexOf(`-${archive.title}.html`) !== -1
-              })
-
-            const data = await github.rest.repos.createOrUpdateFileContents({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              branch: branch,
-              path: path,
-              message: `add archive ${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${rawLink}`,
-              content: Buffer.from(content, 'utf8').toString('base64'),
-              sha: sha
-            })
-            console.log("data",typeof(data),data)
-  
+            return await script.archiveEntry({github, context, core, archive})

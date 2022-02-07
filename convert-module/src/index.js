@@ -9,10 +9,14 @@ import {
 import {
   getContentSha
 } from './octokit'
+import filenamifyUrl from 'filenamify-url'
+import fs from 'fs'
+import path from 'path'
 
 export * from './helper'
 export * from './parse'
 export * from './octokit'
+export { default as filenamifyUrl } from 'filenamify-url'
 
 function postTemplate (date, title, body, description, jumplink, published, author) {
   let desc = ''
@@ -185,7 +189,7 @@ async function createPost (github, context,
   }
 }
 
-export async function entry ({
+export async function convertEntry ({
   github,
   context,
   core
@@ -360,5 +364,148 @@ export async function entry ({
       console.log('unkown event:', context.eventName)
       break
     }
+  }
+}
+
+function findArchives (folderPath) {
+  const directory = fs.opendirSync(folderPath)
+  if (!directory) {
+    return
+  }
+  const result = []
+  while (1) {
+    const d = directory.readSync()
+    if (!d) {
+      break
+    }
+    if (!d.isDirectory()) {
+      continue
+    }
+    const p = path.join(folderPath, d.name, 'index.html')
+    try {
+      if (fs.statSync(p)) {
+        result.push(d.name)
+      }
+    } catch (error) {}
+  }
+  return result
+}
+
+export const ArchiveEngines = [
+  'ArchiveBox',
+  'cairn',
+  'obelisk',
+  'rivet'
+]
+
+export async function archiveEntry ({
+  github,
+  context,
+  core,
+  archive
+}) {
+  const filename = filenamifyUrl(archive.link, {
+    maxLength: 255
+  })
+
+  let headArchives = ''
+  for (let i = 0; i < ArchiveEngines.length; i++) {
+    headArchives += `
+  - name: ${ArchiveEngines[i]}
+    url: "/archives/${ArchiveEngines[i].toLowerCase()}-${filename}.html"
+`
+  }
+
+  // 先把 _post 写了
+  const contentPost = `---
+layout: null
+title: ${archive.title}
+author: "${archive.author || 'Archive'}"
+archives: ${headArchives}
+---
+
+[${archive.title}](${archive.link})
+`
+
+  // 获取日期
+  let date = archive.date
+  if (!date || date === '') {
+    if (context.eventName === 'issue_comment') {
+      date = context.payload.issue.updated_at || context.payload.issue.created_at
+    } else {
+      date = context.payload.comment.updated_at || context.payload.comment.created_at
+    }
+    date = dateFormat(new Date(date))
+  }
+
+  const pathPost = `_posts/archives/${date}-${filename}.md`
+  const branchPost = 'gh-pages'
+
+  const { shaPost } = await getContentSha(github, context,
+    branchPost, pathPost)
+
+  // 201 上传成功
+  // 200 更新成功
+  let statusPost = 0
+  try {
+    const response = await github.rest.repos.createOrUpdateFileContents({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      branch: branchPost,
+      path: pathPost,
+      message: `archive ${date}-${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${archive.link}`,
+      content: Buffer.from(contentPost, 'utf8').toString('base64'),
+      sha: shaPost
+    })
+    statusPost = response.status
+  } catch (error) {
+    console.log('createOrUpdateFileContents', error)
+    if (error.response) {
+      statusPost = error.response.status
+    }
+  }
+
+  console.log('createOrUpdateFileContents', statusPost)
+
+  const archives = findArchives(path.join(process.cwd(), 'archives'))
+  console.log('archives', archives)
+
+  for (let i = 0; i < archives; i++) {
+    const contentArchive = `---
+layout: null
+title: "[archive][${archive.engine}] ${archive.title}"
+author: "${archive.author || 'Archive'}"
+---
+{{ "${encodeURIComponent(require('fs').readFileSync(path.join(process.cwd(), 'archives', archives[i], 'index.html')).toString())}" | url_decode }}
+`
+
+    const pathArchive = `archives/${archives[i]}/${filename}.html`
+    const branchArchive = 'gh-pages'
+
+    const { shaArchive } = await getContentSha(github, context,
+      branchArchive, pathArchive)
+
+    // 201 上传成功
+    // 200 更新成功
+    let statusArchive = 0
+    try {
+      const response = await github.rest.repos.createOrUpdateFileContents({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        branch: branchArchive,
+        path: pathArchive,
+        message: `archive engine ${archives[i]} ${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${archive.link}`,
+        content: Buffer.from(contentArchive, 'utf8').toString('base64'),
+        sha: shaArchive
+      })
+      statusArchive = response.status
+    } catch (error) {
+      console.log('createOrUpdateFileContents', error)
+      if (error.response) {
+        statusArchive = error.response.status
+      }
+    }
+
+    console.log('createOrUpdateFileContents', statusArchive)
   }
 }

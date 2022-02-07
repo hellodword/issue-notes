@@ -175,6 +175,9 @@ async function myRemarkPlugin (tree, result) {
                   }
                 }),
                 handler: (args) => {
+                  if (typeof args.engine === 'string') {
+                    args.engine = [args.engine]
+                  }
                   result.archive = {
                     node: node,
                     args: args,
