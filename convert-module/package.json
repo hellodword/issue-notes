@@ -9,10 +9,10 @@
     },
     "dependencies": {
         "content-disposition": "^0.5.4",
-        "filenamify-url": "^3.0.0",
         "follow-redirects": "^1.14.7",
         "remark": "^14.0.2",
         "shlex": "^2.1.0",
+        "string-sanitizer": "^2.0.2",
         "unist-util-visit": "^4.1.0",
         "yargs": "^13.3.2"
     },

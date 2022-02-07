@@ -4924,6 +4924,143 @@ __webpack_unused_export__ = function (s) {
 
 /***/ }),
 
+/***/ 734:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+var __webpack_unused_export__;
+
+
+exports.Nw = function (str) {
+  return str.replace(/[^a-zA-Z0-9]/g, '');
+};
+
+exports.Nw.keepUnicode = function (str) {
+  return str.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '');
+};
+
+exports.Nw.keepSpace = function (str) {
+  var str2 = str.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '');
+  return str2.replace(/ /g, ' ');
+};
+
+exports.Nw.addFullstop = function (str) {
+  var str2 = str.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '');
+  return str2.replace(/ /g, '.');
+};
+
+exports.Nw.addUnderscore = function (str) {
+  var str2 = str.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '');
+  return str2.replace(/ /g, '_');
+};
+
+exports.Nw.addDash = function (str) {
+  var str2 = str.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '');
+  return str2.replace(/ /g, '-');
+};
+
+exports.Nw.removeNumber = function (str) {
+  return str.replace(/[^a-zA-Z]/g, '');
+};
+
+exports.Nw.removeText = function (str) {
+  return str.replace(/[^0-9]/g, '');
+};
+
+exports.Nw.keepNumber = function (str) {
+  return str.replace(/[^a-zA-Z0-9]/g, '');
+};
+
+__webpack_unused_export__ = function (str) {
+  return str.replace(/ /g, '.');
+};
+__webpack_unused_export__ = function (str) {
+  return str.replace(/ /g, '_');
+};
+
+__webpack_unused_export__ = function (str) {
+  return str.replace(/ /g, '-');
+};
+
+// Remove Space without sanitizing
+__webpack_unused_export__ = function (str) {
+  return str.replace(/\s+/g, '');
+};
+
+__webpack_unused_export__ = function (str) {
+  return str.replace(/_+/g, '');
+};
+
+__webpack_unused_export__ = function (str) {
+  console.log(
+    `Use validate.isEmail or validate.isUsername for further validation`
+  );
+  return 'Use validate.isEmail or validate.isUsername for further validation';
+};
+
+//Username & Email
+__webpack_unused_export__ = function (str) {
+  const regex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+  if (regex.test(str)) {
+    return str;
+  } else {
+    return false;
+  }
+};
+
+__webpack_unused_export__ = function (str) {
+  const regex = /^[a-z][a-z]+\d*$|^[a-z]\d{2,}$/i;
+  if (regex.test(str)) {
+    return str.toLowerCase();
+  } else {
+    return false;
+  }
+};
+
+// To check a password between 6 to 15 characters which contain at least one numeric digit and a special character
+__webpack_unused_export__ = function (str) {
+  const regex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,15}$/;
+  if (regex.test(str)) {
+    return str;
+  } else {
+    return false;
+  }
+};
+
+// 7 to 20 characters which contain only characters, numeric digits, underscore and first character must be a letter
+__webpack_unused_export__ = function (str) {
+  const regex = /^[A-Za-z]\w{7,20}$/;
+  if (regex.test(str)) {
+    return str;
+  } else {
+    return false;
+  }
+};
+
+// 6 to 20 characters which contain at least one numeric digit, one uppercase and one lowercase letter
+__webpack_unused_export__ = function (str) {
+  const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
+  if (regex.test(str)) {
+    return str;
+  } else {
+    return false;
+  }
+};
+
+// To check a password between 8 to 15 characters which contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character
+__webpack_unused_export__ = function (str) {
+  const regex =
+    /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,15}$/;
+  if (regex.test(str)) {
+    return str;
+  } else {
+    return false;
+  }
+};
+
+
+/***/ }),
+
 /***/ 2577:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -9846,10 +9983,12 @@ __nccwpck_require__.d(__webpack_exports__, {
   "archiveEntry": () => (/* binding */ archiveEntry),
   "convertEntry": () => (/* binding */ convertEntry),
   "dateFormat": () => (/* reexport */ dateFormat),
-  "filenamifyUrl": () => (/* reexport */ filenamifyUrl),
   "getContentSha": () => (/* reexport */ getContentSha),
   "getPromise": () => (/* reexport */ getPromise),
-  "parseMarkdown": () => (/* reexport */ parseMarkdown)
+  "matchFile": () => (/* reexport */ matchFile),
+  "parseMarkdown": () => (/* reexport */ parseMarkdown),
+  "parsePath": () => (/* reexport */ parsePath),
+  "sanitize": () => (/* reexport */ string_sanitizer/* sanitize */.Nw)
 });
 
 // NAMESPACE OBJECT: ./node_modules/micromark/lib/constructs.js
@@ -9867,10 +10006,14 @@ __nccwpck_require__.d(constructs_namespaceObject, {
   "text": () => (constructs_text)
 });
 
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(1017);
+var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
 // EXTERNAL MODULE: ./node_modules/follow-redirects/index.js
 var follow_redirects = __nccwpck_require__(7707);
 var follow_redirects_default = /*#__PURE__*/__nccwpck_require__.n(follow_redirects);
 ;// CONCATENATED MODULE: ./src/helper.js
+
 
 
 const {
@@ -9919,6 +10062,23 @@ function getPromise (link) {
       })
     })
   })
+}
+
+function parsePath (p) {
+  const r = []
+  let x = external_path_default().parse(p)
+  if (!x || !x.base) {
+    return
+  }
+  r.unshift(x.base)
+  while (x.dir && x.dir !== '') {
+    x = external_path_default().parse(x.dir)
+    if (!x || !x.base) {
+      break
+    }
+    r.unshift(x.base)
+  }
+  return r
 }
 
 ;// CONCATENATED MODULE: ./node_modules/bail/index.js
@@ -10333,9 +10493,6 @@ VFileMessage.prototype.source = null
 VFileMessage.prototype.ruleId = null
 VFileMessage.prototype.position = null
 
-// EXTERNAL MODULE: external "path"
-var external_path_ = __nccwpck_require__(1017);
-var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
 ;// CONCATENATED MODULE: external "process"
 const external_process_namespaceObject = require("process");
 ;// CONCATENATED MODULE: ./node_modules/vfile/lib/minurl.shared.js
@@ -24912,419 +25069,73 @@ async function parseMarkdown (github, context, filenamePrefix, rawLink, markdown
 }
 
 ;// CONCATENATED MODULE: ./src/octokit.js
-async function getContentSha (github, context, ref, path, cb) {
-  try {
-    const response = await github.rest.repos.getContent({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      ref: ref,
-      path: path
-    })
-    if (response.data && response.data.length > 0) {
-      for (let i = 0; i < response.data.length; i++) {
-        if (response.data[i].name && cb(response.data[i].name)) {
-          return { sha: response.data[i].sha, name: response.data[i].name }
+
+
+// TODO
+// Unhandled error: HttpError: This API returns blobs up to 1 MB in size. The requested blob is too large to fetch via the API, but you can use the Git Data API to request blobs up to 100 MB in size.: {"resource":"Blob","field":"data","code":"too_large"}
+async function getContentSha (github, context, ref, p) {
+  let treeSha = ref
+
+  const ps = parsePath(p)
+  console.log('parsePath', p, ps)
+
+  for (let i = 0; i < ps.length; i++) {
+    try {
+      const response = await github.rest.git.getTree({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        tree_sha: treeSha
+      })
+      console.log('getContentSha', 'getTree', response)
+
+      let match = false
+      for (let j = 0; j < response.data.tree.length; j++) {
+        if (response.data.tree[j].path === ps[i]) {
+          treeSha = response.data.tree[j].sha
+          match = true
+          break
         }
       }
-    } else if (response.data && response.data.sha) {
-      return { sha: response.data.sha, name: response.data.name }
+      if (!match) {
+        return
+      }
+    } catch (error) {
+      console.log('getContentSha', 'getTree', error)
+      return
     }
-    return { sha: '' }
-  } catch (error) {
-    if (error.response && error.response.status === 404) {
-      return { sha: '' }
-    }
-    throw error
   }
+
+  if (treeSha === ref) {
+    return
+  }
+
+  return treeSha
 }
 
-;// CONCATENATED MODULE: ./node_modules/trim-repeated/node_modules/escape-string-regexp/index.js
-function escapeStringRegexp(string) {
-	if (typeof string !== 'string') {
-		throw new TypeError('Expected a string');
-	}
-
-	// Escape characters with special meaning either inside or outside character sets.
-	// Use a simple backslash escape when it’s always valid, and a `\xnn` escape when the simpler form would be disallowed by Unicode patterns’ stricter grammar.
-	return string
-		.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
-		.replace(/-/g, '\\x2d');
-}
-
-;// CONCATENATED MODULE: ./node_modules/trim-repeated/index.js
-
-
-function trimRepeated(string, target) {
-	if (typeof string !== 'string' || typeof target !== 'string') {
-		throw new TypeError('Expected a string');
-	}
-
-	const regex = new RegExp(`(?:${escapeStringRegexp(target)}){2,}`, 'g');
-
-	return string.replace(regex, target);
-}
-
-;// CONCATENATED MODULE: ./node_modules/filename-reserved-regex/index.js
-/* eslint-disable no-control-regex */
-
-function filenameReservedRegex() {
-	return /[<>:"/\\|?*\u0000-\u001F]/g;
-}
-
-function windowsReservedNameRegex() {
-	return /^(con|prn|aux|nul|com\d|lpt\d)$/i;
-}
-
-;// CONCATENATED MODULE: ./node_modules/strip-outer/index.js
-function stripOuter(string, substring) {
-	if (typeof string !== 'string' || typeof substring !== 'string') {
-		throw new TypeError('Expected a string');
-	}
-
-	if (string.startsWith(substring)) {
-		string = string.slice(substring.length);
-	}
-
-	if (string.endsWith(substring)) {
-		string = string.slice(0, -substring.length);
-	}
-
-	return string;
-}
-
-;// CONCATENATED MODULE: ./node_modules/filenamify/filenamify.js
-
-
-
-
-// Doesn't make sense to have longer filenames
-const MAX_FILENAME_LENGTH = 100;
-
-const reControlChars = /[\u0000-\u001F\u0080-\u009F]/g; // eslint-disable-line no-control-regex
-const reRelativePath = /^\.+/;
-const reTrailingPeriods = /\.+$/;
-
-function filenamify_filenamify(string, options = {}) {
-	if (typeof string !== 'string') {
-		throw new TypeError('Expected a string');
-	}
-
-	const replacement = options.replacement === undefined ? '!' : options.replacement;
-
-	if (filenameReservedRegex().test(replacement) && reControlChars.test(replacement)) {
-		throw new Error('Replacement string cannot contain reserved filename characters');
-	}
-
-	string = string.normalize('NFD');
-	string = string.replace(filenameReservedRegex(), replacement);
-	string = string.replace(reControlChars, replacement);
-	string = string.replace(reRelativePath, replacement);
-	string = string.replace(reTrailingPeriods, '');
-
-	if (replacement.length > 0) {
-		string = trimRepeated(string, replacement);
-		string = string.length > 1 ? stripOuter(string, replacement) : string;
-	}
-
-	string = windowsReservedNameRegex().test(string) ? string + replacement : string;
-	const allowedLength = typeof options.maxLength === 'number' ? options.maxLength : MAX_FILENAME_LENGTH;
-	if (string.length > allowedLength) {
-		const extensionIndex = string.lastIndexOf('.');
-		string = string.slice(0, Math.min(allowedLength, extensionIndex)) + string.slice(extensionIndex);
-	}
-
-	return string;
-}
-
-;// CONCATENATED MODULE: external "node:path"
-const external_node_path_namespaceObject = require("node:path");
-;// CONCATENATED MODULE: ./node_modules/filenamify/filenamify-path.js
-
-
-
-function filenamifyPath(filePath, options) {
-	filePath = path.resolve(filePath);
-	return path.join(path.dirname(filePath), filenamify(path.basename(filePath), options));
-}
-
-;// CONCATENATED MODULE: ./node_modules/filenamify/index.js
-
-
-
-;// CONCATENATED MODULE: ./node_modules/normalize-url/index.js
-// https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs
-const DATA_URL_DEFAULT_MIME_TYPE = 'text/plain';
-const DATA_URL_DEFAULT_CHARSET = 'us-ascii';
-
-const testParameter = (name, filters) => filters.some(filter => filter instanceof RegExp ? filter.test(name) : filter === name);
-
-const normalizeDataURL = (urlString, {stripHash}) => {
-	const match = /^data:(?<type>[^,]*?),(?<data>[^#]*?)(?:#(?<hash>.*))?$/.exec(urlString);
-
-	if (!match) {
-		throw new Error(`Invalid URL: ${urlString}`);
-	}
-
-	let {type, data, hash} = match.groups;
-	const mediaType = type.split(';');
-	hash = stripHash ? '' : hash;
-
-	let isBase64 = false;
-	if (mediaType[mediaType.length - 1] === 'base64') {
-		mediaType.pop();
-		isBase64 = true;
-	}
-
-	// Lowercase MIME type
-	const mimeType = (mediaType.shift() || '').toLowerCase();
-	const attributes = mediaType
-		.map(attribute => {
-			let [key, value = ''] = attribute.split('=').map(string => string.trim());
-
-			// Lowercase `charset`
-			if (key === 'charset') {
-				value = value.toLowerCase();
-
-				if (value === DATA_URL_DEFAULT_CHARSET) {
-					return '';
-				}
-			}
-
-			return `${key}${value ? `=${value}` : ''}`;
-		})
-		.filter(Boolean);
-
-	const normalizedMediaType = [
-		...attributes,
-	];
-
-	if (isBase64) {
-		normalizedMediaType.push('base64');
-	}
-
-	if (normalizedMediaType.length > 0 || (mimeType && mimeType !== DATA_URL_DEFAULT_MIME_TYPE)) {
-		normalizedMediaType.unshift(mimeType);
-	}
-
-	return `data:${normalizedMediaType.join(';')},${isBase64 ? data.trim() : data}${hash ? `#${hash}` : ''}`;
-};
-
-function normalizeUrl(urlString, options) {
-	options = {
-		defaultProtocol: 'http:',
-		normalizeProtocol: true,
-		forceHttp: false,
-		forceHttps: false,
-		stripAuthentication: true,
-		stripHash: false,
-		stripTextFragment: true,
-		stripWWW: true,
-		removeQueryParameters: [/^utm_\w+/i],
-		removeTrailingSlash: true,
-		removeSingleSlash: true,
-		removeDirectoryIndex: false,
-		sortQueryParameters: true,
-		...options,
-	};
-
-	urlString = urlString.trim();
-
-	// Data URL
-	if (/^data:/i.test(urlString)) {
-		return normalizeDataURL(urlString, options);
-	}
-
-	if (/^view-source:/i.test(urlString)) {
-		throw new Error('`view-source:` is not supported as it is a non-standard protocol');
-	}
-
-	const hasRelativeProtocol = urlString.startsWith('//');
-	const isRelativeUrl = !hasRelativeProtocol && /^\.*\//.test(urlString);
-
-	// Prepend protocol
-	if (!isRelativeUrl) {
-		urlString = urlString.replace(/^(?!(?:\w+:)?\/\/)|^\/\//, options.defaultProtocol);
-	}
-
-	const urlObject = new URL(urlString);
-
-	if (options.forceHttp && options.forceHttps) {
-		throw new Error('The `forceHttp` and `forceHttps` options cannot be used together');
-	}
-
-	if (options.forceHttp && urlObject.protocol === 'https:') {
-		urlObject.protocol = 'http:';
-	}
-
-	if (options.forceHttps && urlObject.protocol === 'http:') {
-		urlObject.protocol = 'https:';
-	}
-
-	// Remove auth
-	if (options.stripAuthentication) {
-		urlObject.username = '';
-		urlObject.password = '';
-	}
-
-	// Remove hash
-	if (options.stripHash) {
-		urlObject.hash = '';
-	} else if (options.stripTextFragment) {
-		urlObject.hash = urlObject.hash.replace(/#?:~:text.*?$/i, '');
-	}
-
-	// Remove duplicate slashes if not preceded by a protocol
-	// NOTE: This could be implemented using a single negative lookbehind
-	// regex, but we avoid that to maintain compatibility with older js engines
-	// which do not have support for that feature.
-	if (urlObject.pathname) {
-		// TODO: Replace everything below with `urlObject.pathname = urlObject.pathname.replace(/(?<!\b[a-z][a-z\d+\-.]{1,50}:)\/{2,}/g, '/');` when Safari supports negative lookbehind.
-
-		// Split the string by occurrences of this protocol regex, and perform
-		// duplicate-slash replacement on the strings between those occurrences
-		// (if any).
-		const protocolRegex = /\b[a-z][a-z\d+\-.]{1,50}:\/\//g;
-
-		let lastIndex = 0;
-		let result = '';
-		for (;;) {
-			const match = protocolRegex.exec(urlObject.pathname);
-			if (!match) {
-				break;
-			}
-
-			const protocol = match[0];
-			const protocolAtIndex = match.index;
-			const intermediate = urlObject.pathname.slice(lastIndex, protocolAtIndex);
-
-			result += intermediate.replace(/\/{2,}/g, '/');
-			result += protocol;
-			lastIndex = protocolAtIndex + protocol.length;
-		}
-
-		const remnant = urlObject.pathname.slice(lastIndex, urlObject.pathname.length);
-		result += remnant.replace(/\/{2,}/g, '/');
-
-		urlObject.pathname = result;
-	}
-
-	// Decode URI octets
-	if (urlObject.pathname) {
-		try {
-			urlObject.pathname = decodeURI(urlObject.pathname);
-		} catch {}
-	}
-
-	// Remove directory index
-	if (options.removeDirectoryIndex === true) {
-		options.removeDirectoryIndex = [/^index\.[a-z]+$/];
-	}
-
-	if (Array.isArray(options.removeDirectoryIndex) && options.removeDirectoryIndex.length > 0) {
-		let pathComponents = urlObject.pathname.split('/');
-		const lastComponent = pathComponents[pathComponents.length - 1];
-
-		if (testParameter(lastComponent, options.removeDirectoryIndex)) {
-			pathComponents = pathComponents.slice(0, -1);
-			urlObject.pathname = pathComponents.slice(1).join('/') + '/';
-		}
-	}
-
-	if (urlObject.hostname) {
-		// Remove trailing dot
-		urlObject.hostname = urlObject.hostname.replace(/\.$/, '');
-
-		// Remove `www.`
-		if (options.stripWWW && /^www\.(?!www\.)[a-z\-\d]{1,63}\.[a-z.\-\d]{2,63}$/.test(urlObject.hostname)) {
-			// Each label should be max 63 at length (min: 1).
-			// Source: https://en.wikipedia.org/wiki/Hostname#Restrictions_on_valid_host_names
-			// Each TLD should be up to 63 characters long (min: 2).
-			// It is technically possible to have a single character TLD, but none currently exist.
-			urlObject.hostname = urlObject.hostname.replace(/^www\./, '');
-		}
-	}
-
-	// Remove query unwanted parameters
-	if (Array.isArray(options.removeQueryParameters)) {
-		// eslint-disable-next-line unicorn/no-useless-spread -- We are intentionally spreading to get a copy.
-		for (const key of [...urlObject.searchParams.keys()]) {
-			if (testParameter(key, options.removeQueryParameters)) {
-				urlObject.searchParams.delete(key);
-			}
-		}
-	}
-
-	if (options.removeQueryParameters === true) {
-		urlObject.search = '';
-	}
-
-	// Sort query parameters
-	if (options.sortQueryParameters) {
-		urlObject.searchParams.sort();
-
-		// Calling `.sort()` encodes the search parameters, so we need to decode them again.
-		try {
-			urlObject.search = decodeURIComponent(urlObject.search);
-		} catch {}
-	}
-
-	if (options.removeTrailingSlash) {
-		urlObject.pathname = urlObject.pathname.replace(/\/$/, '');
-	}
-
-	const oldUrlString = urlString;
-
-	// Take advantage of many of the Node `url` normalizations
-	urlString = urlObject.toString();
-
-	if (!options.removeSingleSlash && urlObject.pathname === '/' && !oldUrlString.endsWith('/') && urlObject.hash === '') {
-		urlString = urlString.replace(/\/$/, '');
-	}
-
-	// Remove ending `/` unless removeSingleSlash is false
-	if ((options.removeTrailingSlash || urlObject.pathname === '/') && urlObject.hash === '' && options.removeSingleSlash) {
-		urlString = urlString.replace(/\/$/, '');
-	}
-
-	// Restore relative protocol, if applicable
-	if (hasRelativeProtocol && !options.normalizeProtocol) {
-		urlString = urlString.replace(/^http:\/\//, '//');
-	}
-
-	// Remove http/https
-	if (options.stripProtocol) {
-		urlString = urlString.replace(/^(?:https?:)?\/\//, '');
-	}
-
-	return urlString;
-}
-
-;// CONCATENATED MODULE: ./node_modules/humanize-url/index.js
-
-
-function humanizeUrl(url) {
-	if (typeof url !== 'string') {
-		throw new TypeError('Expected a string');
-	}
-
-	return normalizeUrl(url, {stripProtocol: true});
-}
-
-;// CONCATENATED MODULE: ./node_modules/filenamify-url/index.js
-
-
-
-function filenamifyUrl(string, options) {
-	if (typeof string !== 'string') {
-		throw new TypeError('Expected a string');
-	}
-
-	return filenamify_filenamify(decodeURIComponent(humanizeUrl(string)), options);
+async function matchFile (github, context, sha, cb) {
+  try {
+    const response = await github.rest.git.getTree({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      tree_sha: sha
+    })
+    console.log('matchFile', 'getTree', response)
+
+    for (let j = 0; j < response.data.tree.length; j++) {
+      if (cb(response.data.tree[j].path)) {
+        return { sha: response.data.tree[j].sha, name: response.data.tree[j].path }
+      }
+    }
+  } catch (error) {
+    console.log('matchFile', 'getTree', error)
+  }
 }
 
 // EXTERNAL MODULE: external "fs"
 var external_fs_ = __nccwpck_require__(7147);
 var external_fs_default = /*#__PURE__*/__nccwpck_require__.n(external_fs_);
+// EXTERNAL MODULE: ./node_modules/string-sanitizer/index.js
+var string_sanitizer = __nccwpck_require__(734);
 ;// CONCATENATED MODULE: ./src/index.js
 
 
@@ -25376,9 +25187,15 @@ async function deletePost (github, context,
   const branch = 'gh-pages'
   const dir = '_posts'
 
-  const { sha, name } = await getContentSha(github, context,
-    branch, dir,
+  const shaParent = await getContentSha(github, context, branch, dir)
+  if (!shaParent || shaParent === '') {
+    return
+  }
+
+  const { sha, name } = await matchFile(github, context,
+    shaParent,
     (item) => {
+      console.log('deletePost', 'cb', item, `-${issueId}-${issueCommentId}.md`)
       return item.indexOf(`-${issueId}-${issueCommentId}.md`) !== -1
     })
 
@@ -25396,7 +25213,7 @@ async function deletePost (github, context,
       branch: branch,
       path: `${dir}/${name}`,
       message: `delete ${name} via github-actions`,
-      sha: sha
+      sha: sha || ''
     })
     status = response.status
   } catch (error) {
@@ -25457,11 +25274,10 @@ async function createPost (github, context,
 
   const post = postTemplate(date, result.title, result.body, result.description, result.jumplink, !minimized, result.author)
 
-  const path = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`
+  const pathPost = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`
   const branch = 'gh-pages'
 
-  const { sha } = await getContentSha(github, context,
-    branch, path)
+  const sha = await getContentSha(github, context, branch, `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`)
 
   // 201 上传成功
   // 200 更新成功
@@ -25471,8 +25287,8 @@ async function createPost (github, context,
       owner: context.repo.owner,
       repo: context.repo.repo,
       branch: branch,
-      path: path,
-      message: `add ${path} via github-actions${'\n\n'}${result.title}${'\n'}${rawLink}`,
+      path: pathPost,
+      message: `add ${pathPost} via github-actions${'\n\n'}${result.title}${'\n'}${rawLink}`,
       content: Buffer.from(post, 'utf8').toString('base64'),
       sha: sha
     })
@@ -25690,10 +25506,16 @@ async function convertEntry ({
 }
 
 function findArchives (folderPath) {
-  const directory = external_fs_default().opendirSync(folderPath)
-  if (!directory) {
+  let directory
+  try {
+    directory = external_fs_default().opendirSync(folderPath)
+    if (!directory) {
+      return
+    }
+  } catch (error) {
     return
   }
+
   const result = []
   while (1) {
     const d = directory.readSync()
@@ -25706,6 +25528,7 @@ function findArchives (folderPath) {
     const p = external_path_default().join(folderPath, d.name, 'index.html')
     try {
       if (external_fs_default().statSync(p)) {
+        console.log(p)
         result.push(d.name)
       }
     } catch (error) {}
@@ -25726,15 +25549,13 @@ async function archiveEntry ({
   core,
   archive
 }) {
-  const filename = filenamifyUrl(archive.link, {
-    maxLength: 255
-  })
+  const filename = (0,string_sanitizer/* sanitize */.Nw)(archive.link)
 
   let headArchives = ''
   for (let i = 0; i < ArchiveEngines.length; i++) {
     headArchives += `
   - name: ${ArchiveEngines[i]}
-    url: "/archives/${ArchiveEngines[i].toLowerCase()}-${filename}.html"
+    url: "/archives/${ArchiveEngines[i].toLowerCase()}/${filename}.html"
 `
   }
 
@@ -25743,6 +25564,7 @@ async function archiveEntry ({
 layout: null
 title: ${archive.title}
 author: "${archive.author || 'Archive'}"
+jumplink: ${archive.link}
 archives: ${headArchives}
 ---
 
@@ -25760,11 +25582,25 @@ archives: ${headArchives}
     date = dateFormat(new Date(date))
   }
 
+  let rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}`
+  if (context.eventName === 'issue_comment') {
+    rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}#issuecomment-${context.payload.comment.id}`
+  }
+
   const pathPost = `_posts/archives/${date}-${filename}.md`
   const branchPost = 'gh-pages'
 
-  const { shaPost } = await getContentSha(github, context,
-    branchPost, pathPost)
+  const shaPostParent = await getContentSha(github, context, branchPost, '_posts/archives')
+  if (!shaPostParent || shaPostParent === '') {
+    return
+  }
+
+  const shaPost = await matchFile(github, context,
+    shaPostParent,
+    (item) => {
+      console.log('shaPost', 'cb', item, `${date}-${filename}.md`)
+      return item === `${date}-${filename}.md`
+    })
 
   // 201 上传成功
   // 200 更新成功
@@ -25775,9 +25611,9 @@ archives: ${headArchives}
       repo: context.repo.repo,
       branch: branchPost,
       path: pathPost,
-      message: `archive ${date}-${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${archive.link}`,
+      message: `archive ${date}-${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${archive.link}${'\n'}${rawLink}`,
       content: Buffer.from(contentPost, 'utf8').toString('base64'),
-      sha: shaPost
+      sha: shaPost ? shaPost.sha : ''
     })
     statusPost = response.status
   } catch (error) {
@@ -25789,23 +25625,29 @@ archives: ${headArchives}
 
   console.log('createOrUpdateFileContents', statusPost)
 
-  const archives = findArchives(__nccwpck_require__.ab + "archives")
+  let archives = findArchives(external_path_default().join(process.cwd(), 'archives'))
   console.log('archives', archives)
+  archives = archives || []
 
-  for (let i = 0; i < archives; i++) {
-    const contentArchive = `---
-layout: null
-title: "[archive][${archive.engine}] ${archive.title}"
-author: "${archive.author || 'Archive'}"
----
-{{ "${encodeURIComponent((__nccwpck_require__(7147).readFileSync)(__nccwpck_require__.ab + "archives/" + archives[i] + '/index.html').toString())}" | url_decode }}
-`
-
-    const pathArchive = `archives/${archives[i]}/${filename}.html`
+  for (let i = 0; i < archives.length; i++) {
+    console.log('archiving', archives[i])
+    //     const contentArchive = `---
+    // layout: null
+    // title: "[archive][${archive.engine}] ${archive.title}"
+    // author: "${archive.author || 'Archive'}"
+    // ---
+    // {{ "${encodeURIComponent(fs.readFileSync(path.join(process.cwd(), 'archives', archives[i], 'index.html')).toString())}" | url_decode }}
+    // `
+    // 不需要 jekyll header 了
+    const contentArchive = external_fs_default().readFileSync(external_path_default().join(process.cwd(), 'archives', archives[i], 'index.html'))
+    const pathArchive = `archives/${archives[i]}`
     const branchArchive = 'gh-pages'
 
-    const { shaArchive } = await getContentSha(github, context,
-      branchArchive, pathArchive)
+    console.log('archiving', archives[i], pathArchive, filename)
+
+    const shaArchive = await getContentSha(github, context, branchArchive, `${pathArchive}/${filename}.html`)
+
+    console.log('archiving', archives[i], 'shaArchive', shaArchive)
 
     // 201 上传成功
     // 200 更新成功
@@ -25815,20 +25657,20 @@ author: "${archive.author || 'Archive'}"
         owner: context.repo.owner,
         repo: context.repo.repo,
         branch: branchArchive,
-        path: pathArchive,
+        path: `${pathArchive}/${filename}.html`,
         message: `archive engine ${archives[i]} ${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${archive.link}`,
-        content: Buffer.from(contentArchive, 'utf8').toString('base64'),
-        sha: shaArchive
+        content: contentArchive.toString('base64'),
+        sha: shaArchive ? shaArchive.sha : ''
       })
       statusArchive = response.status
     } catch (error) {
-      console.log('createOrUpdateFileContents', error)
+      console.log('archiving', archives[i], 'createOrUpdateFileContents', error)
       if (error.response) {
         statusArchive = error.response.status
       }
     }
 
-    console.log('createOrUpdateFileContents', statusArchive)
+    console.log('archiving', archives[i], 'createOrUpdateFileContents', statusArchive)
   }
 }
 

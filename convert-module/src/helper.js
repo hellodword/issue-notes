@@ -1,3 +1,4 @@
+import path from 'path'
 import fr from 'follow-redirects'
 
 const {
@@ -46,4 +47,21 @@ export function getPromise (link) {
       })
     })
   })
+}
+
+export function parsePath (p) {
+  const r = []
+  let x = path.parse(p)
+  if (!x || !x.base) {
+    return
+  }
+  r.unshift(x.base)
+  while (x.dir && x.dir !== '') {
+    x = path.parse(x.dir)
+    if (!x || !x.base) {
+      break
+    }
+    r.unshift(x.base)
+  }
+  return r
 }

@@ -7,16 +7,17 @@ import {
 } from './parse'
 
 import {
-  getContentSha
+  getContentSha,
+  matchFile
 } from './octokit'
-import filenamifyUrl from 'filenamify-url'
 import fs from 'fs'
 import path from 'path'
+import { sanitize } from 'string-sanitizer'
+export { sanitize } from 'string-sanitizer'
 
 export * from './helper'
 export * from './parse'
 export * from './octokit'
-export { default as filenamifyUrl } from 'filenamify-url'
 
 function postTemplate (date, title, body, description, jumplink, published, author) {
   let desc = ''
@@ -54,9 +55,15 @@ async function deletePost (github, context,
   const branch = 'gh-pages'
   const dir = '_posts'
 
-  const { sha, name } = await getContentSha(github, context,
-    branch, dir,
+  const shaParent = await getContentSha(github, context, branch, dir)
+  if (!shaParent || shaParent === '') {
+    return
+  }
+
+  const { sha, name } = await matchFile(github, context,
+    shaParent,
     (item) => {
+      console.log('deletePost', 'cb', item, `-${issueId}-${issueCommentId}.md`)
       return item.indexOf(`-${issueId}-${issueCommentId}.md`) !== -1
     })
 
@@ -74,7 +81,7 @@ async function deletePost (github, context,
       branch: branch,
       path: `${dir}/${name}`,
       message: `delete ${name} via github-actions`,
-      sha: sha
+      sha: sha || ''
     })
     status = response.status
   } catch (error) {
@@ -135,11 +142,10 @@ async function createPost (github, context,
 
   const post = postTemplate(date, result.title, result.body, result.description, result.jumplink, !minimized, result.author)
 
-  const path = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`
+  const pathPost = `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`
   const branch = 'gh-pages'
 
-  const { sha } = await getContentSha(github, context,
-    branch, path)
+  const sha = await getContentSha(github, context, branch, `_posts/${filenamePrefix}-${issueId}-${issueCommentId}.md`)
 
   // 201 上传成功
   // 200 更新成功
@@ -149,8 +155,8 @@ async function createPost (github, context,
       owner: context.repo.owner,
       repo: context.repo.repo,
       branch: branch,
-      path: path,
-      message: `add ${path} via github-actions${'\n\n'}${result.title}${'\n'}${rawLink}`,
+      path: pathPost,
+      message: `add ${pathPost} via github-actions${'\n\n'}${result.title}${'\n'}${rawLink}`,
       content: Buffer.from(post, 'utf8').toString('base64'),
       sha: sha
     })
@@ -368,10 +374,16 @@ export async function convertEntry ({
 }
 
 function findArchives (folderPath) {
-  const directory = fs.opendirSync(folderPath)
-  if (!directory) {
+  let directory
+  try {
+    directory = fs.opendirSync(folderPath)
+    if (!directory) {
+      return
+    }
+  } catch (error) {
     return
   }
+
   const result = []
   while (1) {
     const d = directory.readSync()
@@ -384,6 +396,7 @@ function findArchives (folderPath) {
     const p = path.join(folderPath, d.name, 'index.html')
     try {
       if (fs.statSync(p)) {
+        console.log(p)
         result.push(d.name)
       }
     } catch (error) {}
@@ -404,15 +417,13 @@ export async function archiveEntry ({
   core,
   archive
 }) {
-  const filename = filenamifyUrl(archive.link, {
-    maxLength: 255
-  })
+  const filename = sanitize(archive.link)
 
   let headArchives = ''
   for (let i = 0; i < ArchiveEngines.length; i++) {
     headArchives += `
   - name: ${ArchiveEngines[i]}
-    url: "/archives/${ArchiveEngines[i].toLowerCase()}-${filename}.html"
+    url: "/archives/${ArchiveEngines[i].toLowerCase()}/${filename}.html"
 `
   }
 
@@ -421,6 +432,7 @@ export async function archiveEntry ({
 layout: null
 title: ${archive.title}
 author: "${archive.author || 'Archive'}"
+jumplink: ${archive.link}
 archives: ${headArchives}
 ---
 
@@ -438,11 +450,25 @@ archives: ${headArchives}
     date = dateFormat(new Date(date))
   }
 
+  let rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}`
+  if (context.eventName === 'issue_comment') {
+    rawLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${context.payload.issue.number}#issuecomment-${context.payload.comment.id}`
+  }
+
   const pathPost = `_posts/archives/${date}-${filename}.md`
   const branchPost = 'gh-pages'
 
-  const { shaPost } = await getContentSha(github, context,
-    branchPost, pathPost)
+  const shaPostParent = await getContentSha(github, context, branchPost, '_posts/archives')
+  if (!shaPostParent || shaPostParent === '') {
+    return
+  }
+
+  const shaPost = await matchFile(github, context,
+    shaPostParent,
+    (item) => {
+      console.log('shaPost', 'cb', item, `${date}-${filename}.md`)
+      return item === `${date}-${filename}.md`
+    })
 
   // 201 上传成功
   // 200 更新成功
@@ -453,9 +479,9 @@ archives: ${headArchives}
       repo: context.repo.repo,
       branch: branchPost,
       path: pathPost,
-      message: `archive ${date}-${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${archive.link}`,
+      message: `archive ${date}-${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${archive.link}${'\n'}${rawLink}`,
       content: Buffer.from(contentPost, 'utf8').toString('base64'),
-      sha: shaPost
+      sha: shaPost ? shaPost.sha : ''
     })
     statusPost = response.status
   } catch (error) {
@@ -467,23 +493,29 @@ archives: ${headArchives}
 
   console.log('createOrUpdateFileContents', statusPost)
 
-  const archives = findArchives(path.join(process.cwd(), 'archives'))
+  let archives = findArchives(path.join(process.cwd(), 'archives'))
   console.log('archives', archives)
+  archives = archives || []
 
-  for (let i = 0; i < archives; i++) {
-    const contentArchive = `---
-layout: null
-title: "[archive][${archive.engine}] ${archive.title}"
-author: "${archive.author || 'Archive'}"
----
-{{ "${encodeURIComponent(require('fs').readFileSync(path.join(process.cwd(), 'archives', archives[i], 'index.html')).toString())}" | url_decode }}
-`
-
-    const pathArchive = `archives/${archives[i]}/${filename}.html`
+  for (let i = 0; i < archives.length; i++) {
+    console.log('archiving', archives[i])
+    //     const contentArchive = `---
+    // layout: null
+    // title: "[archive][${archive.engine}] ${archive.title}"
+    // author: "${archive.author || 'Archive'}"
+    // ---
+    // {{ "${encodeURIComponent(fs.readFileSync(path.join(process.cwd(), 'archives', archives[i], 'index.html')).toString())}" | url_decode }}
+    // `
+    // 不需要 jekyll header 了
+    const contentArchive = fs.readFileSync(path.join(process.cwd(), 'archives', archives[i], 'index.html'))
+    const pathArchive = `archives/${archives[i]}`
     const branchArchive = 'gh-pages'
 
-    const { shaArchive } = await getContentSha(github, context,
-      branchArchive, pathArchive)
+    console.log('archiving', archives[i], pathArchive, filename)
+
+    const shaArchive = await getContentSha(github, context, branchArchive, `${pathArchive}/${filename}.html`)
+
+    console.log('archiving', archives[i], 'shaArchive', shaArchive)
 
     // 201 上传成功
     // 200 更新成功
@@ -493,19 +525,19 @@ author: "${archive.author || 'Archive'}"
         owner: context.repo.owner,
         repo: context.repo.repo,
         branch: branchArchive,
-        path: pathArchive,
+        path: `${pathArchive}/${filename}.html`,
         message: `archive engine ${archives[i]} ${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${archive.link}`,
-        content: Buffer.from(contentArchive, 'utf8').toString('base64'),
-        sha: shaArchive
+        content: contentArchive.toString('base64'),
+        sha: shaArchive ? shaArchive.sha : ''
       })
       statusArchive = response.status
     } catch (error) {
-      console.log('createOrUpdateFileContents', error)
+      console.log('archiving', archives[i], 'createOrUpdateFileContents', error)
       if (error.response) {
         statusArchive = error.response.status
       }
     }
 
-    console.log('createOrUpdateFileContents', statusArchive)
+    console.log('archiving', archives[i], 'createOrUpdateFileContents', statusArchive)
   }
 }

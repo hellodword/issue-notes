@@ -19,7 +19,9 @@ jobs:
           echo "github.event.action: ${{ github.event.action }}"
           echo "github.actor: ${{ github.actor }}"
           echo "github.repository_owner: ${{ github.repository_owner }}"
-          cat "$GITHUB_EVENT_PATH"
+          # cat "$GITHUB_EVENT_PATH"
+
+      # TODO 更安全的鉴权
       - name: check
         if: ${{ github.actor != github.repository_owner }}
         run: |
@@ -32,7 +34,13 @@ jobs:
           ref: 'main'
           path: 'main'
 
-      - name: convert.js
+      # node --version 默认16，process.version 默认12，坑
+      # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-Readme.md#nodejs
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+
+      - name: convert
         id: convert
         uses: actions/github-script@v5
         with:
@@ -44,6 +52,7 @@ jobs:
         if: ${{ steps.convert.outputs.result != '' }}
         run: |
           echo "${{steps.convert.outputs.result}}"
+
       - name: archive link
         if: ${{ steps.convert.outputs.result != '' }}
         id: archive_link
@@ -65,17 +74,17 @@ jobs:
             return archive.title || ''
 
       - name: archive engine
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+        if: ${{ steps.archive_title.outputs.result != '' }}
         id: archive_engine
         uses: actions/github-script@v5
         with:
           result-encoding: string
           script: |
             const archive = ${{ steps.convert.outputs.result }}
-            return archive.engine ? archive.engine.join(',') : 'archivebox'
+            return archive.engine || ['all']
 
       - name: archive author
-        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' }}
+        if: ${{ steps.archive_title.outputs.result != '' }}
         id: archive_author
         uses: actions/github-script@v5
         with:
@@ -86,25 +95,25 @@ jobs:
 
       # archivebox
       - name: archivebox
-        if: ${{ contains(steps.archive_engine.outputs.result, 'archivebox') }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'archivebox') || contains(steps.archive_engine.outputs.result, 'all') }}
         run: |
-          mkdir -p archive/archivebox
-          cd archive/archivebox
+          mkdir -p archives/archivebox
+          cd archives/archivebox
           docker run --rm -i -v `pwd`:/data archivebox/archivebox init
           # https://github.com/ArchiveBox/ArchiveBox/wiki/Configuration#timeout
           docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set TIMEOUT=1200
           docker run --rm -i -v `pwd`:/data archivebox/archivebox add "${{ steps.archive_link.outputs.result }}"
           sudo find . -name singlefile.html
-          sudo chown -R $(find ../main -printf '%u:%g\n' | uniq) ./archive
+          sudo chown -R $(find ../../main -printf '%u:%g\n' | uniq) ./archive
           sudo mv ./archive/*/singlefile.html temp.html
           sudo mv temp.html index.html
 
       # 对微信公众号效果比目前的 archivebox 好，但是对别的 bug 就多
       - name: cairn
-        if: ${{ contains(steps.archive_engine.outputs.result, 'cairn') }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'cairn') || contains(steps.archive_engine.outputs.result, 'all') }}
         run: |
-          mkdir -p archive/cairn
-          cd archive/cairn
+          mkdir -p archives/cairn
+          cd archives/cairn
           sudo npm install -g @wabarc/cairn
           cairn -o . -t 1200 "${{ steps.archive_link.outputs.result }}"
           ls -alh
@@ -113,15 +122,15 @@ jobs:
 
       # obelisk 年久失修，rivet 这个 fork 不错
       - uses: actions/setup-go@v2
-        if: ${{ contains(steps.archive_engine.outputs.result, 'obelisk') }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'obelisk') || contains(steps.archive_engine.outputs.result, 'all') }}
         with:
           go-version: '1.17.6'
       - name: obelisk
-        if: ${{ contains(steps.archive_engine.outputs.result, 'obelisk') }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'obelisk') || contains(steps.archive_engine.outputs.result, 'all') }}
         run: |
-          mkdir -p archive/obelisk
-          cd archive/obelisk
-          go install github.com/go-shiori/obelisk/cmd/obelisk
+          mkdir -p archives/obelisk
+          cd archives/obelisk
+          go install github.com/go-shiori/obelisk/cmd/obelisk@master
           obelisk "${{ steps.archive_link.outputs.result }}"
           ls -alh
           for f in *.htm; do 
@@ -133,18 +142,19 @@ jobs:
 
       # rivet
       - uses: actions/setup-go@v2
-        if: ${{ contains(steps.archive_engine.outputs.result, 'rivet') }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'rivet') || contains(steps.archive_engine.outputs.result, 'all') }}
         with:
           go-version: '1.17.6'
       - name: rivet
-        if: ${{ contains(steps.archive_engine.outputs.result, 'rivet') }}
+        if: ${{ contains(steps.archive_engine.outputs.result, 'rivet') || contains(steps.archive_engine.outputs.result, 'all') }}
         run: |
-          mkdir -p archive/rivet
-          cd archive/rivet
-          # go install github.com/wabarc/rivet/cmd/rivet@main
-          git clone --depth 1 -b patch-4 https://github.com/hellodword/rivet source
-          (cd source && go build -o ../rivet_bin ./cmd/rivet)
-          sudo mv rivet_bin /usr/bin/rivet
+          mkdir -p archives/rivet
+          cd archives/rivet
+          
+          go install github.com/wabarc/rivet/cmd/rivet@main
+          # git clone --depth 1 -b patch-4 https://github.com/hellodword/rivet source
+          # (cd source && go build -o ../rivet_bin ./cmd/rivet)
+          # sudo mv rivet_bin /usr/bin/rivet
 
           rivet -m archive "${{ steps.archive_link.outputs.result }}"
           ls -alh
