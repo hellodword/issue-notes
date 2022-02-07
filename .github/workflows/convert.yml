@@ -122,6 +122,7 @@ jobs:
           ls -alh
           sudo mv *.html ../index.html
 
+      # obelisk 年久失修，rivet 这个 fork 不错
       - uses: actions/setup-go@v2
         if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'obelisk' }}
         with:
@@ -131,12 +132,31 @@ jobs:
         run: |
           mkdir obelisk
           cd obelisk
-          go get -u -v github.com/go-shiori/obelisk/cmd/obelisk
+          go install github.com/go-shiori/obelisk/cmd/obelisk
           obelisk "${{ steps.archive_link.outputs.result }}"
           ls -alh
           for f in *.htm; do 
               mv -- "$f" "${f%.htm}.html"
           done
+          ls -alh
+          sudo mv *.html ../index.html
+
+      # rivet
+      - uses: actions/setup-go@v2
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'rivet' }}
+        with:
+          go-version: '1.17.6'
+      - name: rivet
+        if: ${{ steps.archive_link.outputs.result != '' && steps.archive_title.outputs.result != '' && steps.archive_engine.outputs.result == 'rivet' }}
+        run: |
+          mkdir rivet
+          cd rivet
+          # go install github.com/wabarc/rivet/cmd/rivet@main
+          git clone --depth 1 -b patch-4 https://github.com/hellodword/rivet source
+          (cd source && go build -o ../rivet_bin ./cmd/rivet)
+          sudo mv rivet_bin /usr/bin/rivet
+
+          rivet -m archive "${{ steps.archive_link.outputs.result }}"
           ls -alh
           sudo mv *.html ../index.html
 
