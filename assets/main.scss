@@ -1,0 +1,26 @@
+---
+---
+// https://github.com/jekyll/minima/tree/v2.5.1#customization
+@import "minima";
+
+// https://github.com/jekyll/minima/issues/418#issuecomment-552832004
+// make code looks good with linenos
+.rouge-table {
+    margin: 0;
+    border-collapse: collapse;
+    border-spacing: 0;
+    border: none;
+  
+    pre, code {
+      border: none;
+    }
+
+    tbody, tr {
+      border: none;
+    }
+
+    td {
+      border: none;
+      padding: 0px;
+    }
+  }
