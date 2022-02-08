@@ -11,6 +11,7 @@ on:
       - '.gitignore'
       - '_posts/**'
       - 'convert-module/**'
+      - 'convert-module-ts/**'
 
 jobs:
   build:
@@ -46,6 +47,11 @@ jobs:
           echo "${GIT_COMMIT_MESSAGE}"
           rm -rf _posts
           rm -rf .git
+          rm -rf README.md
+          rm -rf convert-module*
+          rm -rf plugins
+          rm -rf .github
+          ls -alh
           cd ..
           cp -r main/* gh-pages/
           cd gh-pages

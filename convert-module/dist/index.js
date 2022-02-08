@@ -25257,6 +25257,8 @@ async function createPost (github, context,
 
   // 留待 actions 进行 archive
   if (result.archive) {
+    result.archive.args.title = result.archive.args.title || result.title
+    result.archive.args.author = result.archive.args.author || result.author
     return result.archive.args
   }
 
