@@ -453,17 +453,7 @@ archives: ${headArchives}
   const pathPost = `_posts/archives/${date}-${filename}.md`
   const branchPost = 'gh-pages'
 
-  const shaPostParent = await getContentSha(github, context, branchPost, '_posts/archives')
-  if (!shaPostParent || shaPostParent === '') {
-    return
-  }
-
-  const shaPost = await matchFile(github, context,
-    shaPostParent,
-    (item) => {
-      console.log('shaPost', 'cb', item, `${date}-${filename}.md`)
-      return item === `${date}-${filename}.md`
-    })
+  const shaPost = await getContentSha(github, context, branchPost, pathPost)
 
   // 201 上传成功
   // 200 更新成功
@@ -476,7 +466,7 @@ archives: ${headArchives}
       path: pathPost,
       message: `archive ${date}-${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${archive.link}${'\n'}${rawLink}`,
       content: Buffer.from(contentPost, 'utf8').toString('base64'),
-      sha: shaPost ? shaPost.sha : ''
+      sha: shaPost
     })
     statusPost = response.status
   } catch (error) {
@@ -523,7 +513,7 @@ archives: ${headArchives}
         path: `${pathArchive}/${filename}.html`,
         message: `archive engine ${archives[i]} ${filename} via github-actions${'\n\n'}${archive.title}${'\n'}${archive.link}`,
         content: contentArchive.toString('base64'),
-        sha: shaArchive ? shaArchive.sha : ''
+        sha: shaArchive
       })
       statusArchive = response.status
     } catch (error) {
