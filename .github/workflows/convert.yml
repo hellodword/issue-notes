@@ -9,9 +9,14 @@ on:
 env:
   TZ: Asia/Shanghai
 
+# dynamic matrix
+# https://docs.github.com/en/actions/learn-github-actions/expressions#fromjson
+
 jobs:
-  build:
+  job1:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.convert.outputs.result }}
     steps:
       - name: debug
         run: |
@@ -27,111 +32,121 @@ jobs:
         run: |
           exit 1
 
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          ref: 'main'
-          path: 'main'
-
-      # node --version 默认16，process.version 默认12，坑
-      # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-Readme.md#nodejs
-      - uses: actions/setup-node@v2
-        with:
-          node-version: 16
-
+      - name: prepare script file
+        run: |
+          wget https://github.com/hellodword/issue-notes-ts/raw/release/index.js
       - name: convert
         id: convert
-        uses: actions/github-script@v5
+        uses: actions/github-script@main
         with:
+          result-encoding: string
           script: |
-            const script = require('./main/convert-module/dist/index.js');
-            return await script.convertEntry({github, context, core})
+            const script = require('./index.js');
+            const result = await script.convertEntry({github, context, core})
+            if (result && result.archive && result.archive.length > 0){
+              console.log('result.archive', result.archive)
+              return JSON.stringify({archive: result.archive})
+            }
+            return ''
 
       - name: debug
         if: ${{ steps.convert.outputs.result != '' }}
         run: |
-          echo "${{steps.convert.outputs.result}}"
+          echo '${{steps.convert.outputs.result}}'
 
-      - name: archive link
-        if: ${{ steps.convert.outputs.result != '' }}
-        id: archive_link
-        uses: actions/github-script@v5
+  job2:
+    needs: job1
+    if: ${{ needs.job1.outputs.matrix != '' && needs.job1.outputs.matrix != '[]' && needs.job1.outputs.matrix != 'undefined' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJSON(needs.job1.outputs.matrix)}}
+    steps:
+      - name: debug
+        run: |
+          echo "${{ matrix.archive }}"
+          echo "${{ matrix.archive.link }}"
+          echo "${{ toJSON(matrix.archive) }}"
+      - name: debug
+        uses: actions/github-script@main
         with:
-          result-encoding: string
           script: |
-            const archive = ${{ steps.convert.outputs.result }}
-            return archive.link || ''
+            const archive = ${{ toJSON(matrix.archive) }}
+            console.log(1, archive)
+            console.log(2, "${{ matrix.archive.link }}")
+            console.log(3, ${{ toJSON(matrix.archive.engine) }})
 
-      - name: archive title
-        if: ${{ steps.archive_link.outputs.result != '' }}
-        id: archive_title
-        uses: actions/github-script@v5
-        with:
-          result-encoding: string
-          script: |
-            const archive = ${{ steps.convert.outputs.result }}
-            return archive.title || ''
-
-      - name: archive engine
-        if: ${{ steps.archive_title.outputs.result != '' }}
-        id: archive_engine
-        uses: actions/github-script@v5
-        with:
-          result-encoding: string
-          script: |
-            const archive = ${{ steps.convert.outputs.result }}
-            return archive.engine || ['all']
-
-      - name: archive author
-        if: ${{ steps.archive_title.outputs.result != '' }}
-        id: archive_author
-        uses: actions/github-script@v5
-        with:
-          result-encoding: string
-          script: |
-            const archive = ${{ steps.convert.outputs.result }}
-            return archive.author
+      - name: prepare script file
+        run: |
+          wget https://github.com/hellodword/issue-notes-ts/raw/release/index.js
 
       # archivebox
-      - name: archivebox
-        if: ${{ contains(steps.archive_engine.outputs.result, 'archivebox') || contains(steps.archive_engine.outputs.result, 'all') }}
+      - name: archivebox process
+        if: ${{ contains(matrix.archive.engine, 'archivebox') || contains(matrix.archive.engine, 'all') }}
         run: |
           mkdir -p archives/archivebox
           cd archives/archivebox
           docker run --rm -i -v `pwd`:/data archivebox/archivebox init
           # https://github.com/ArchiveBox/ArchiveBox/wiki/Configuration#timeout
           docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set TIMEOUT=1200
-          docker run --rm -i -v `pwd`:/data archivebox/archivebox add "${{ steps.archive_link.outputs.result }}"
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox add "${{ matrix.archive.link }}"
           sudo find . -name singlefile.html
           sudo chown -R $(find ../../main -printf '%u:%g\n' | uniq) ./archive
           sudo mv ./archive/*/singlefile.html temp.html
           sudo mv temp.html index.html
+      - name: archivebox commit
+        if: ${{ contains(matrix.archive.engine, 'archivebox') || contains(matrix.archive.engine, 'all') }}
+        uses: actions/github-script@main
+        with:
+          script: |
+            const script = require('./index.js')
+            const archive = ${{ toJSON(matrix.archive) }}
+            return await script.archiveEntry({
+              context: context,
+              github: github,
+              engine: "archivebox",
+              filename: archive.filename,
+              link: archive.link
+            })
 
       # 对微信公众号效果比目前的 archivebox 好，但是对别的 bug 就多
-      - name: cairn
-        if: ${{ contains(steps.archive_engine.outputs.result, 'cairn') || contains(steps.archive_engine.outputs.result, 'all') }}
+      - name: cairn process
+        if: ${{ contains(matrix.archive.engine, 'cairn') || contains(matrix.archive.engine, 'all') }}
         run: |
           mkdir -p archives/cairn
           cd archives/cairn
           sudo npm install -g @wabarc/cairn
-          cairn -o . -t 1200 "${{ steps.archive_link.outputs.result }}"
+          cairn -o . -t 1200 "${{ matrix.archive.link }}"
           ls -alh
           sudo mv *.html temp.html
           sudo mv temp.html index.html
+      - name: cairn commit
+        if: ${{ contains(matrix.archive.engine, 'cairn') || contains(matrix.archive.engine, 'all') }}
+        uses: actions/github-script@main
+        with:
+          script: |
+            const script = require('./index.js')
+            const archive = ${{ toJSON(matrix.archive) }}
+            return await script.archiveEntry({
+              context: context,
+              github: github,
+              engine: "cairn",
+              filename: archive.filename,
+              link: archive.link
+            })
 
       # obelisk 年久失修，rivet 这个 fork 不错
-      - uses: actions/setup-go@v2
-        if: ${{ contains(steps.archive_engine.outputs.result, 'obelisk') || contains(steps.archive_engine.outputs.result, 'all') }}
+      - name: obelisk prepare      
+        uses: actions/setup-go@v2
+        if: ${{ contains(matrix.archive.engine, 'obelisk') || contains(matrix.archive.engine, 'all') }}
         with:
           go-version: '1.17.6'
-      - name: obelisk
-        if: ${{ contains(steps.archive_engine.outputs.result, 'obelisk') || contains(steps.archive_engine.outputs.result, 'all') }}
+      - name: obelisk process
+        if: ${{ contains(matrix.archive.engine, 'obelisk') || contains(matrix.archive.engine, 'all') }}
         run: |
           mkdir -p archives/obelisk
           cd archives/obelisk
           go install github.com/go-shiori/obelisk/cmd/obelisk@master
-          obelisk "${{ steps.archive_link.outputs.result }}"
+          obelisk "${{ matrix.archive.link }}"
           ls -alh
           for f in *.htm; do 
               mv -- "$f" "${f%.htm}.html"
@@ -139,14 +154,29 @@ jobs:
           ls -alh
           sudo mv *.html temp.html
           sudo mv temp.html index.html
+      - name: obelisk commit
+        if: ${{ contains(matrix.archive.engine, 'obelisk') || contains(matrix.archive.engine, 'all') }}
+        uses: actions/github-script@main
+        with:
+          script: |
+            const script = require('./index.js')
+            const archive = ${{ toJSON(matrix.archive) }}
+            return await script.archiveEntry({
+              context: context,
+              github: github,
+              engine: "obelisk",
+              filename: archive.filename,
+              link: archive.link
+            })
 
       # rivet
-      - uses: actions/setup-go@v2
-        if: ${{ contains(steps.archive_engine.outputs.result, 'rivet') || contains(steps.archive_engine.outputs.result, 'all') }}
+      - name: rivet prepare
+        uses: actions/setup-go@v2
+        if: ${{ contains(matrix.archive.engine, 'rivet') || contains(matrix.archive.engine, 'all') }}
         with:
           go-version: '1.17.6'
-      - name: rivet
-        if: ${{ contains(steps.archive_engine.outputs.result, 'rivet') || contains(steps.archive_engine.outputs.result, 'all') }}
+      - name: rivet process
+        if: ${{ contains(matrix.archive.engine, 'rivet') || contains(matrix.archive.engine, 'all') }}
         run: |
           mkdir -p archives/rivet
           cd archives/rivet
@@ -156,16 +186,21 @@ jobs:
           # (cd source && go build -o ../rivet_bin ./cmd/rivet)
           # sudo mv rivet_bin /usr/bin/rivet
 
-          rivet -m archive "${{ steps.archive_link.outputs.result }}"
+          rivet -m archive "${{ matrix.archive.link }}"
           ls -alh
           sudo mv *.html temp.html
           sudo mv temp.html index.html
-
-      - name: commit
-        if: ${{ steps.archive_engine.outputs.result != '' }}
-        uses: actions/github-script@v5
+      - name: rivet commit
+        if: ${{ contains(matrix.archive.engine, 'rivet') || contains(matrix.archive.engine, 'all') }}
+        uses: actions/github-script@main
         with:
           script: |
-            const script = require('./main/convert-module/dist/index.js')
-            const archive = ${{ steps.convert.outputs.result }}
-            return await script.archiveEntry({github, context, core, archive})
+            const script = require('./index.js')
+            const archive = ${{ toJSON(matrix.archive) }}
+            return await script.archiveEntry({
+              context: context,
+              github: github,
+              engine: "rivet",
+              filename: archive.filename,
+              link: archive.link
+            })

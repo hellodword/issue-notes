@@ -19,10 +19,7 @@ jobs:
         if: ${{ github.actor != github.repository_owner }}
         run: |
           exit 1
-      - uses: actions/setup-node@v2
-        with:
-          node-version: 16
-      - uses: actions/github-script@v5
+      - uses: actions/github-script@main
         with:
           script: |
             ${{ github.event.inputs.script }}

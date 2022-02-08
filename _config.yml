@@ -67,9 +67,6 @@ exclude:
   - README.md
   - .github/
   - LICENSE
-  - convert-module/
-  - convert-module-ts/
-  - ignore/
 
 # Produces a cleaner folder structure when using categories
 permalink: /:year/:month/:day/:title.html

@@ -45,12 +45,12 @@ jobs:
           cd main
           export GIT_COMMIT_MESSAGE=$(git show -s --format=%s HEAD)
           echo "${GIT_COMMIT_MESSAGE}"
-          rm -rf _posts
-          rm -rf .git
-          rm -rf README.md
-          rm -rf convert-module*
           rm -rf plugins
+          rm -rf _posts
           rm -rf .github
+          rm -rf LICENSE
+          rm -rf README.md
+          rm -rf .git
           ls -alh
           cd ..
           cp -r main/* gh-pages/
