@@ -25192,37 +25192,29 @@ async function deletePost (github, context,
     return
   }
 
-  const { sha, name } = await matchFile(github, context,
+  let sha = {}
+  sha = await matchFile(github, context,
     shaParent,
     (item) => {
       console.log('deletePost', 'cb', item, `-${issueId}-${issueCommentId}.md`)
       return item.indexOf(`-${issueId}-${issueCommentId}.md`) !== -1
     })
 
-  if (!sha || sha === '' || !name || name === '') {
+  console.log('deletePost', sha)
+  if (!sha || !sha.sha || sha.sha === '' || !sha.name || sha.name === '') {
     return
   }
 
-  // 201 上传成功
-  // 200 更新成功
-  let status = 0
-  try {
-    const response = await github.rest.repos.deleteFile({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      branch: branch,
-      path: `${dir}/${name}`,
-      message: `delete ${name} via github-actions`,
-      sha: sha || ''
-    })
-    status = response.status
-  } catch (error) {
-    if (error.response) {
-      status = error.response.status
-    }
-  }
-
-  console.log('delete post', status)
+  // 这里不 catch
+  const response = await github.rest.repos.deleteFile({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    branch: branch,
+    path: `${dir}/${sha.name}`,
+    message: `delete ${sha.name} via github-actions`,
+    sha: sha.sha || ''
+  })
+  console.log('deletePost', response)
 }
 
 async function createPost (github, context,
@@ -25564,7 +25556,8 @@ async function archiveEntry ({
   // 先把 _post 写了
   const contentPost = `---
 layout: null
-title: ${archive.title}
+title: |
+  ${archive.title}
 author: "${archive.author || 'Archive'}"
 jumplink: ${archive.link}
 archives: ${headArchives}
