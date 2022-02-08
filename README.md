@@ -33,6 +33,8 @@ Github Issues 支持：
 
 结果 [Github Pages 并不支持](https://pages.github.com/versions/)。
 
+> 并且这份白名单中还限制版本，所以去对应的 repo 看文档和源码还要切换到对应版本才行，例如 [minima v2.5.1](https://github.com/jekyll/minima/tree/v2.5.1)
+
 用它支持的 [jekyll-paginate@1.1.0](https://github.com/jekyll/jekyll-paginate/tree/v1.1.0) 则非常不方便，没办法自定义后缀和首页，只好加个跳转，勉强能用了。
 
 ### cache
@@ -117,7 +119,8 @@ Github Issues 支持：
 
 ## TODO
 
-- [ ] archive 同时使用多个引擎，并且展示在首页的同一条
+- [x] archive 同时使用多个引擎，并且展示在首页的同一条
 - [ ] 解析 title/description/author/date，最终实现一条链接自动完事
 - [ ] 储存 code link 对应的文件，以规避 IssueComment 的 65536 characters 上限
-- [ ] 确保 _posts 中的文件进行了 url encode，从而不会被误识别 liquid
+- [ ] ts
+
