@@ -32,22 +32,45 @@ jobs:
         run: |
           exit 1
 
-      - name: prepare script file
-        run: |
-          wget https://github.com/hellodword/issue-notes-ts/raw/release/index.js
+      # - name: prepare script file
+      #   run: |
+      #     wget https://github.com/hellodword/issue-notes-ts/raw/release/index.js
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          repository: 'hellodword/issue-notes-ts'
+          ref: 'main'
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      - name: install npm dep
+        run: npm i
       - name: convert
         id: convert
-        uses: actions/github-script@main
-        with:
-          result-encoding: string
-          script: |
-            const script = require('./index.js');
-            const result = await script.convertEntry({github, context, core})
-            if (result && result.archive && result.archive.length > 0){
-              console.log('result.archive', result.archive)
-              return JSON.stringify({archive: result.archive})
-            }
-            return ''
+        run: | 
+          npm run start -- convert
+          output="$(cat output.json 2>/dev/null || echo '')"
+          echo "output ${output}"
+          echo "::set-output name=result::${output}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      # - name: convert
+      #   id: convert
+      #   uses: actions/github-script@main
+      #   with:
+      #     result-encoding: string
+      #     script: |
+      #       const script = require('./index.js');
+      #       const result = await script.convertEntry({github, context, core})
+      #       if (result && result.archive && result.archive.length > 0){
+      #         console.log('result.archive', result.archive)
+      #         return JSON.stringify(result)
+      #       }
+      #       return ''
 
       - name: debug
         if: ${{ steps.convert.outputs.result != '' }}
@@ -56,7 +79,7 @@ jobs:
 
   job2:
     needs: job1
-    if: ${{ needs.job1.outputs.matrix != '' && needs.job1.outputs.matrix != '[]' && needs.job1.outputs.matrix != 'undefined' }}
+    if: ${{ needs.job1.outputs.matrix != '' && needs.job1.outputs.matrix != '[]' && needs.job1.outputs.matrix != '{}' && needs.job1.outputs.matrix != 'undefined' }}
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{fromJSON(needs.job1.outputs.matrix)}}
@@ -75,9 +98,23 @@ jobs:
             console.log(2, "${{ matrix.archive.link }}")
             console.log(3, ${{ toJSON(matrix.archive.engine) }})
 
-      - name: prepare script file
-        run: |
-          wget https://github.com/hellodword/issue-notes-ts/raw/release/index.js
+      # - name: prepare script file
+      #   run: |
+      #     wget https://github.com/hellodword/issue-notes-ts/raw/release/index.js
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          repository: 'hellodword/issue-notes-ts'
+          ref: 'main'
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      - name: install npm dep
+        run: npm i
 
       # archivebox
       - name: archivebox process
@@ -95,18 +132,10 @@ jobs:
           sudo mv temp.html index.html
       - name: archivebox commit
         if: ${{ contains(matrix.archive.engine, 'archivebox') || contains(matrix.archive.engine, 'all') }}
-        uses: actions/github-script@main
-        with:
-          script: |
-            const script = require('./index.js')
-            const archive = ${{ toJSON(matrix.archive) }}
-            return await script.archiveEntry({
-              context: context,
-              github: github,
-              engine: "archivebox",
-              filename: archive.filename,
-              link: archive.link
-            })
+        run: | 
+          npm run start -- archive --engine archivebox "${{ matrix.archive.link }}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       # 对微信公众号效果比目前的 archivebox 好，但是对别的 bug 就多
       - name: cairn process
@@ -121,18 +150,10 @@ jobs:
           sudo mv temp.html index.html
       - name: cairn commit
         if: ${{ contains(matrix.archive.engine, 'cairn') || contains(matrix.archive.engine, 'all') }}
-        uses: actions/github-script@main
-        with:
-          script: |
-            const script = require('./index.js')
-            const archive = ${{ toJSON(matrix.archive) }}
-            return await script.archiveEntry({
-              context: context,
-              github: github,
-              engine: "cairn",
-              filename: archive.filename,
-              link: archive.link
-            })
+        run: | 
+          npm run start -- archive --engine cairn "${{ matrix.archive.link }}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       # obelisk 年久失修，rivet 这个 fork 不错
       - name: obelisk prepare      
@@ -156,18 +177,10 @@ jobs:
           sudo mv temp.html index.html
       - name: obelisk commit
         if: ${{ contains(matrix.archive.engine, 'obelisk') || contains(matrix.archive.engine, 'all') }}
-        uses: actions/github-script@main
-        with:
-          script: |
-            const script = require('./index.js')
-            const archive = ${{ toJSON(matrix.archive) }}
-            return await script.archiveEntry({
-              context: context,
-              github: github,
-              engine: "obelisk",
-              filename: archive.filename,
-              link: archive.link
-            })
+        run: | 
+          npm run start -- archive --engine obelisk "${{ matrix.archive.link }}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       # rivet
       - name: rivet prepare
@@ -192,15 +205,7 @@ jobs:
           sudo mv temp.html index.html
       - name: rivet commit
         if: ${{ contains(matrix.archive.engine, 'rivet') || contains(matrix.archive.engine, 'all') }}
-        uses: actions/github-script@main
-        with:
-          script: |
-            const script = require('./index.js')
-            const archive = ${{ toJSON(matrix.archive) }}
-            return await script.archiveEntry({
-              context: context,
-              github: github,
-              engine: "rivet",
-              filename: archive.filename,
-              link: archive.link
-            })
+        run: | 
+          npm run start -- archive --engine rivet "${{ matrix.archive.link }}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

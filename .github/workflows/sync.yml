@@ -38,8 +38,8 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          ref: 'gh-pages '
-          path: 'gh-pages '
+          ref: 'gh-pages'
+          path: 'gh-pages'
       - name: sync
         run: |
           cd main
