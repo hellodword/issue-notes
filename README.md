@@ -41,55 +41,73 @@ Github Issues 支持：
 
 搞不懂这些浏览器缓存，干脆把什么 `Cache-Control: no-cache` 和 `Math.random()` 都加上，自用不是很在意这些性能。
 
+### Node
+
+`actions/github-script@v5` 只支持 node 12，刚好这几天更新了 v6，将 node 版本改为 node 16，但还是不够灵活，如果要把逻辑放到 [a separate file](https://github.com/actions/github-script#run-a-separate-file) ，就需要打包成 CommonJS。
+
+但是依赖里又有 Pure ESM，作为 NodeJS 新手，乱七八糟的实在是搞不定，切换成 ESM，原本配置好的 rollup 又挂了，同时 jest 还挂掉了，按照 jest 支持 ESM 的文档说明也配置不好。
+
+于是我干脆仿照的 `actions/github-script` 的源码，自己实现了 [直接运行 ts](./.github/workflows/convert.yml#L39-L60)
+
 
 ## inline commands
 > 设计了一些 inline commands，选用了 markdown 里的三层 quote 作为标识，而不是容易影响 markdown 格式的 jekyll 的 YAML front matter。刚好 github-actions 这个 app对 issues 进行的操作是不会触发 Github Actions 的，可以用于编译修改包含 inline commands 的 issue/comment。
 - [x] `author` 对应 jekyll YAML front matter 的 author
   ```
   >>> author [AUTHOR]
+
+      >>> author "Bill Bill"
   ```
-- [x] `desc` 对应 jekyll YAML front matter 的 description
+- [x] `desc/description` 对应 jekyll YAML front matter 的 description
   ```
   >>> desc [line1]
            [line2]
            [line3]
+
       >>> desc `hello dword` `hi`
               line2
               "line 3"
   ```
-- [x] `img` 远程请求并插入图片
+- [x] `img/image` 远程请求并插入图片，会利用 [file-type](https://github.com/sindresorhus/file-type) 来尝试识别图片格式
   ```
   >>> img [LINK]
+
+      >>> img https://github.githubassets.com/images/modules/logos_page/Octocat.png
   ```
-- [x] `jump` 首页不跳转到 jekyll post 链接
+- [x] `jump` 从首页点击时不跳转到 jekyll post 链接，而是指定的链接
   ```
   >>> jump [LINK]
+
+      >>> jump https://github.com/actions
   ```
-- [x] `del` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了无法再触发，archive 的就不支持了，手动删除吧
+- [x] `del/delete` 删除对应的 post，防止删除 issue/comment 触发的 github actions 失败了无法再触发，archive 的只删除展示页，具体的 archive 文件不会删除
   ```
   >>> del [LINK]
+
       >>> del https://hellodword.github.io/issue-notes/2022/02/03/1-1029028094.html
       >>> del https://github.com/hellodword/issue-notes/issues/1#issuecomment-1029028094
       >>> del /1-1029028094.html
       >>> del /1#issuecomment-1029028094
   ```
-- [x] `code` 远程请求并嵌入代码
+- [x] `code` 远程请求并嵌入代码，不指定 lang 的时候会利用 [vscode-languagedetection](https://github.com/microsoft/vscode-languagedetection) 自动识别来进行高亮
   ```
   >>> code [OPTIONS] [LINK]
       Options:
             --lang   Identifier to enable syntax highlighting
             --name   <name> File name
-      >>> code https://test.com/test.js
+
+      >>> code https://github.com/microsoft/vscode-languagedetection/blob/4a85ba3b62ddc60d7dfb27d8b1c3855aea49a861/package.json
   ```
 - [x] `archive` 可以对文章进行 archive，利用一些 web archiving 工具
-  > [https://github.com/iipc/awesome-web-archiving](https://github.com/iipc/awesome-web-archiving)
+  > [Awesome Web Archiving](https://github.com/iipc/awesome-web-archiving)
   ```
   >>> archive [LINK]
       Options:
             --title  <title>  标题
             --author <author> 作者
             --date   <date>   日期
-            --engine <engine> web archiving 引擎，可选 archivebox,cairn,obelisk,rivet
+            --engine <engine> web archiving 引擎，可选 archivebox,cairn,obelisk,rivet,all，默认 all
+
       >>> archive --title "How NAT traversal works" --author "David Anderson" https://tailscale.com/blog/how-nat-traversal-works/
   ```
 
@@ -98,7 +116,8 @@ Github Issues 支持：
   - [x] created
   - [x] edited
   - [x] deleted
-  - [x] `hide/unhide` github 只提供了操作 minimize 的 api，但所有 api result 中没有关于是否隐藏的信息，但是会触发 edited，只好通过请求网页来判断
+  - [x] `hide/unhide`  
+    github 只提供了操作 minimize 的 api，但所有 api result 中均没有关于是否隐藏的信息，但是又会触发 edited，只好通过请求网页来判断。（我觉得是产品缺陷，要么不该触发 edited，要么就应该在 event 中提供明确信息，已经向官方反馈并被告知 `We'd need the GitHub API to learn about this and emit an event so that we can do that as well. I'll put this on that team's backlog.` ）
 - `issues`:
   - [x] opened
   - [x] edited
@@ -122,5 +141,5 @@ Github Issues 支持：
 - [x] archive 同时使用多个引擎，并且展示在首页的同一条
 - [ ] 解析 title/description/author/date，最终实现一条链接自动完事
 - [ ] 储存 code link 对应的文件，以规避 IssueComment 的 65536 characters 上限
-- [ ] ts
-
+- [x] ts
+- [ ] 优化代码，补齐测试
