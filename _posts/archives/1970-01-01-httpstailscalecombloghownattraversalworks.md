@@ -1,6 +1,6 @@
 ---
 layout: null
-date: 2022-02-13T04:36:06Z
+date: 2022-02-13T05:53:43Z
 title: |
   How NAT traversal works
 author: "Archive"
