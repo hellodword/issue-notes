@@ -1,20 +1,22 @@
 ---
 layout: null
-title: How NAT traversal works
+date: 2022-02-13T04:36:06Z
+title: |
+  How NAT traversal works
 author: "Archive"
 jumplink: https://tailscale.com/blog/how-nat-traversal-works/
 archives: 
   - name: ArchiveBox
-    url: "/archives/archivebox/httpstailscalecombloghownattraversalworks.html"
+    url: "archives/archivebox/httpstailscalecombloghownattraversalworks.html"
 
   - name: cairn
-    url: "/archives/cairn/httpstailscalecombloghownattraversalworks.html"
+    url: "archives/cairn/httpstailscalecombloghownattraversalworks.html"
 
   - name: obelisk
-    url: "/archives/obelisk/httpstailscalecombloghownattraversalworks.html"
+    url: "archives/obelisk/httpstailscalecombloghownattraversalworks.html"
 
   - name: rivet
-    url: "/archives/rivet/httpstailscalecombloghownattraversalworks.html"
+    url: "archives/rivet/httpstailscalecombloghownattraversalworks.html"
 
 ---
 
