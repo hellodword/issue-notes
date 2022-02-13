@@ -127,9 +127,15 @@ jobs:
           docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set TIMEOUT=1200
           docker run --rm -i -v `pwd`:/data archivebox/archivebox add "${{ matrix.archive.link }}"
           sudo find . -name singlefile.html
-          sudo chown -R $(find ../../main -printf '%u:%g\n' | uniq) ./archive
+      - name: archivebox post
+        if: ${{ contains(matrix.archive.engine, 'archivebox') || contains(matrix.archive.engine, 'all') }}
+        run: | 
+          sudo chown -R $(find .. -name $(basename $(pwd)) -printf '%u:%g') archives/archivebox
+          cd archives/archivebox
           sudo mv ./archive/*/singlefile.html temp.html
           sudo mv temp.html index.html
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: archivebox commit
         if: ${{ contains(matrix.archive.engine, 'archivebox') || contains(matrix.archive.engine, 'all') }}
         run: | 
