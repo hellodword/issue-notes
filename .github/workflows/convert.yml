@@ -79,6 +79,7 @@ jobs:
 
       - name: set matrix
         id: set-matrix
+        if: ${{ steps.convert.outputs.result != '' }}
         uses: actions/github-script@main
         with:
           result-encoding: string
@@ -90,6 +91,8 @@ jobs:
             for (const i in result.archive) {
               if (result.archive[i].engine.includes('all')) {
                 result.archive[i].engine = all
+              } else {
+                result.archive[i].engine = [result.archive[i].engine]
               }
               for (const j in result.archive[i].engine) {
                 output.archive.push({
@@ -101,7 +104,7 @@ jobs:
                 })
               }
             }
-            return JSON.stringify(output)
+            return output.archive.length === 0 ? '' : JSON.stringify(output)
 
       - name: debug
         if: ${{ steps.set-matrix.outputs.result != '' }}
@@ -168,6 +171,15 @@ jobs:
           docker run --rm -i -v `pwd`:/data archivebox/archivebox init
           # https://github.com/ArchiveBox/ArchiveBox/wiki/Configuration#timeout
           docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set TIMEOUT=1200
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set SAVE_WGET=False
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set SAVE_WARC=False
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set SAVE_PDF=False
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set SAVE_SCREENSHOT=False
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set SAVE_DOM=False
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set SAVE_READABILITY=False
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set SAVE_MERCURY=False
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set SAVE_GIT=False
+          docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set SAVE_ARCHIVE_DOT_ORG=False
           docker run --rm -i -v `pwd`:/data archivebox/archivebox add "${{ matrix.archive.link }}"
           sudo find . -name singlefile.html
 

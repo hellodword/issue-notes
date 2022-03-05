@@ -106,7 +106,7 @@ Github Issues 支持：
             --title  <title>  标题
             --author <author> 作者
             --date   <date>   日期
-            --engine <engine> web archiving 引擎，可选 archivebox,cairn,obelisk,rivet,all，默认 all
+            --engine <engine> web archiving 引擎，可选 archivebox,cairn,obelisk，默认 all
 
       >>> archive --title "How NAT traversal works" --author "David Anderson" https://tailscale.com/blog/how-nat-traversal-works/
   ```
