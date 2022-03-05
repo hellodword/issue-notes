@@ -16,7 +16,7 @@ jobs:
   job1:
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.convert.outputs.result }}
+      matrix: ${{ steps.set-matrix.outputs.result }}
     steps:
       - name: debug
         run: |
@@ -75,13 +75,46 @@ jobs:
       - name: debug
         if: ${{ steps.convert.outputs.result != '' }}
         run: |
-          echo '${{steps.convert.outputs.result}}'
+          echo '${{ steps.convert.outputs.result }}'
+
+      - name: set matrix
+        id: set-matrix
+        uses: actions/github-script@main
+        with:
+          result-encoding: string
+          script: |
+            const all = ["archivebox", "cairn", "obelisk", "rivet"]
+            const result = ${{ steps.convert.outputs.result }}
+            console.log(1, result)
+            const output = {archive: []}
+            for (const i in result.archive) {
+              if (result.archive[i].engine.includes('all')) {
+                result.archive[i].engine = all
+              }
+              for (const j in result.archive[i].engine) {
+                output.archive.push({
+                  link: result.archive[i].link,
+                  title: result.archive[i].title,
+                  author: result.archive[i].author,
+                  date: result.archive[i].date,
+                  engine: result.archive[i].engine[j],
+                })
+              }
+            }
+            return JSON.stringify(output)
+
+      - name: debug
+        if: ${{ steps.set-matrix.outputs.result != '' }}
+        run: |
+          echo '${{ steps.set-matrix.outputs.result }}'
+
 
   job2:
     needs: job1
     if: ${{ needs.job1.outputs.matrix != '' && needs.job1.outputs.matrix != '[]' && needs.job1.outputs.matrix != '{}' && needs.job1.outputs.matrix != 'undefined' }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix: ${{fromJSON(needs.job1.outputs.matrix)}}
     steps:
       - name: debug
@@ -96,29 +129,39 @@ jobs:
             const archive = ${{ toJSON(matrix.archive) }}
             console.log(1, archive)
             console.log(2, "${{ matrix.archive.link }}")
-            console.log(3, ${{ toJSON(matrix.archive.engine) }})
+            console.log(3, "${{ matrix.archive.engine }}")
 
-      # - name: prepare script file
-      #   run: |
-      #     wget https://github.com/hellodword/issue-notes-ts/raw/release/index.js
 
+      # prepare
       - uses: actions/checkout@v2
+        if: ${{ contains(fromJSON('["archivebox", "cairn", "obelisk", "rivet"]'), matrix.archive.engine) }}
         with:
           fetch-depth: 0
           repository: 'hellodword/issue-notes-ts'
           ref: 'main'
+
       - name: Use Node.js 16.x
+        if: ${{ contains(fromJSON('["archivebox", "cairn", "obelisk", "rivet"]'), matrix.archive.engine) }}
         uses: actions/setup-node@v2
         with:
           node-version: 16.x
           cache: 'npm'
           cache-dependency-path: package-lock.json
+
       - name: install npm dep
+        if: ${{ contains(fromJSON('["archivebox", "cairn", "obelisk", "rivet"]'), matrix.archive.engine) }}
         run: npm i
+
+      - name: go prepare      
+        uses: actions/setup-go@v2
+        if: ${{ contains(fromJSON('["obelisk", "rivet"]'), matrix.archive.engine) }}
+        with:
+          go-version: '1.17.6'
+
 
       # archivebox
       - name: archivebox process
-        if: ${{ contains(matrix.archive.engine, 'archivebox') || contains(matrix.archive.engine, 'all') }}
+        if: ${{ contains(fromJSON('["archivebox"]'), matrix.archive.engine) }}
         run: |
           mkdir -p archives/archivebox
           cd archives/archivebox
@@ -127,8 +170,9 @@ jobs:
           docker run --rm -i -v `pwd`:/data archivebox/archivebox config --set TIMEOUT=1200
           docker run --rm -i -v `pwd`:/data archivebox/archivebox add "${{ matrix.archive.link }}"
           sudo find . -name singlefile.html
+
       - name: archivebox post
-        if: ${{ contains(matrix.archive.engine, 'archivebox') || contains(matrix.archive.engine, 'all') }}
+        if: ${{ contains(fromJSON('["archivebox"]'), matrix.archive.engine) }}
         run: | 
           sudo chown -R $(find .. -name $(basename $(pwd)) -printf '%u:%g') archives/archivebox
           cd archives/archivebox
@@ -136,16 +180,18 @@ jobs:
           sudo mv temp.html index.html
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
       - name: archivebox commit
-        if: ${{ contains(matrix.archive.engine, 'archivebox') || contains(matrix.archive.engine, 'all') }}
+        if: ${{ contains(fromJSON('["archivebox"]'), matrix.archive.engine) }}
         run: | 
           npm run start -- archive --engine archivebox "${{ matrix.archive.link }}"
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+
       # 对微信公众号效果比目前的 archivebox 好，但是对别的 bug 就多
       - name: cairn process
-        if: ${{ contains(matrix.archive.engine, 'cairn') || contains(matrix.archive.engine, 'all') }}
+        if: ${{ contains(fromJSON('["cairn"]'), matrix.archive.engine) }}
         run: |
           mkdir -p archives/cairn
           cd archives/cairn
@@ -154,26 +200,23 @@ jobs:
           ls -alh
           sudo mv *.html temp.html
           sudo mv temp.html index.html
+
       - name: cairn commit
-        if: ${{ contains(matrix.archive.engine, 'cairn') || contains(matrix.archive.engine, 'all') }}
+        if: ${{ contains(fromJSON('["cairn"]'), matrix.archive.engine) }}
         run: | 
           npm run start -- archive --engine cairn "${{ matrix.archive.link }}"
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # obelisk 年久失修，rivet 这个 fork 不错
-      - name: obelisk prepare      
-        uses: actions/setup-go@v2
-        if: ${{ contains(matrix.archive.engine, 'obelisk') || contains(matrix.archive.engine, 'all') }}
-        with:
-          go-version: '1.17.6'
+
+      # obelisk
       - name: obelisk process
-        if: ${{ contains(matrix.archive.engine, 'obelisk') || contains(matrix.archive.engine, 'all') }}
+        if: ${{ contains(fromJSON('["obelisk"]'), matrix.archive.engine) }}
         run: |
           mkdir -p archives/obelisk
           cd archives/obelisk
-          go install github.com/go-shiori/obelisk/cmd/obelisk@master
-          obelisk "${{ matrix.archive.link }}"
+          go install github.com/go-shiori/obelisk/cmd/obelisk@latest
+          obelisk --skip-resource-url-error "${{ matrix.archive.link }}"
           ls -alh
           for f in *.htm; do 
               mv -- "$f" "${f%.htm}.html"
@@ -181,37 +224,35 @@ jobs:
           ls -alh
           sudo mv *.html temp.html
           sudo mv temp.html index.html
+
       - name: obelisk commit
-        if: ${{ contains(matrix.archive.engine, 'obelisk') || contains(matrix.archive.engine, 'all') }}
+        if: ${{ contains(fromJSON('["obelisk"]'), matrix.archive.engine) }}
         run: | 
           npm run start -- archive --engine obelisk "${{ matrix.archive.link }}"
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # rivet
-      - name: rivet prepare
-        uses: actions/setup-go@v2
-        if: ${{ contains(matrix.archive.engine, 'rivet') || contains(matrix.archive.engine, 'all') }}
-        with:
-          go-version: '1.17.6'
-      - name: rivet process
-        if: ${{ contains(matrix.archive.engine, 'rivet') || contains(matrix.archive.engine, 'all') }}
-        run: |
-          mkdir -p archives/rivet
-          cd archives/rivet
-          
-          go install github.com/wabarc/rivet/cmd/rivet@main
-          # git clone --depth 1 -b patch-4 https://github.com/hellodword/rivet source
-          # (cd source && go build -o ../rivet_bin ./cmd/rivet)
-          # sudo mv rivet_bin /usr/bin/rivet
 
-          rivet -m archive "${{ matrix.archive.link }}"
-          ls -alh
-          sudo mv *.html temp.html
-          sudo mv temp.html index.html
-      - name: rivet commit
-        if: ${{ contains(matrix.archive.engine, 'rivet') || contains(matrix.archive.engine, 'all') }}
-        run: | 
-          npm run start -- archive --engine rivet "${{ matrix.archive.link }}"
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      # # rivet
+      # - name: rivet process
+      #   if: ${{ contains(fromJSON('["rivet"]'), matrix.archive.engine) }}
+      #   run: |
+      #     mkdir -p archives/rivet
+      #     cd archives/rivet
+          
+      #     go install github.com/wabarc/rivet/cmd/rivet@latest
+      #     # git clone --depth 1 -b patch-4 https://github.com/hellodword/rivet source
+      #     # (cd source && go build -o ../rivet_bin ./cmd/rivet)
+      #     # sudo mv rivet_bin /usr/bin/rivet
+
+      #     rivet -m archive "${{ matrix.archive.link }}"
+      #     ls -alh
+      #     sudo mv *.html temp.html
+      #     sudo mv temp.html index.html
+
+      # - name: rivet commit
+      #   if: ${{ contains(fromJSON('["rivet"]'), matrix.archive.engine) }}
+      #   run: | 
+      #     npm run start -- archive --engine rivet "${{ matrix.archive.link }}"
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
