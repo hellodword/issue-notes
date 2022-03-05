@@ -83,7 +83,7 @@ jobs:
         with:
           result-encoding: string
           script: |
-            const all = ["archivebox", "cairn", "obelisk", "rivet"]
+            const all = ["archivebox", "cairn", "obelisk"]
             const result = ${{ steps.convert.outputs.result }}
             console.log(1, result)
             const output = {archive: []}
@@ -134,14 +134,14 @@ jobs:
 
       # prepare
       - uses: actions/checkout@v2
-        if: ${{ contains(fromJSON('["archivebox", "cairn", "obelisk", "rivet"]'), matrix.archive.engine) }}
+        if: ${{ contains(fromJSON('["archivebox", "cairn", "obelisk"]'), matrix.archive.engine) }}
         with:
           fetch-depth: 0
           repository: 'hellodword/issue-notes-ts'
           ref: 'main'
 
       - name: Use Node.js 16.x
-        if: ${{ contains(fromJSON('["archivebox", "cairn", "obelisk", "rivet"]'), matrix.archive.engine) }}
+        if: ${{ contains(fromJSON('["archivebox", "cairn", "obelisk"]'), matrix.archive.engine) }}
         uses: actions/setup-node@v2
         with:
           node-version: 16.x
@@ -149,12 +149,12 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: install npm dep
-        if: ${{ contains(fromJSON('["archivebox", "cairn", "obelisk", "rivet"]'), matrix.archive.engine) }}
+        if: ${{ contains(fromJSON('["archivebox", "cairn", "obelisk"]'), matrix.archive.engine) }}
         run: npm i
 
       - name: go prepare      
         uses: actions/setup-go@v2
-        if: ${{ contains(fromJSON('["obelisk", "rivet"]'), matrix.archive.engine) }}
+        if: ${{ contains(fromJSON('["obelisk"]'), matrix.archive.engine) }}
         with:
           go-version: '1.17.6'
 
