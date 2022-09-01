@@ -41,10 +41,10 @@ jobs:
           fetch-depth: 0
           repository: 'hellodword/issue-notes-ts'
           ref: 'main'
-      - name: Use Node.js 16.x
+      - name: Use Node.js 16
         uses: actions/setup-node@v2
         with:
-          node-version: 16.x
+          node-version: '16'
           cache: 'npm'
           cache-dependency-path: package-lock.json
       - name: install npm dep
@@ -143,11 +143,11 @@ jobs:
           repository: 'hellodword/issue-notes-ts'
           ref: 'main'
 
-      - name: Use Node.js 16.x
+      - name: Use Node.js 16
         if: ${{ contains(fromJSON('["archivebox", "cairn", "obelisk"]'), matrix.archive.engine) }}
         uses: actions/setup-node@v2
         with:
-          node-version: 16.x
+          node-version: '16'
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
